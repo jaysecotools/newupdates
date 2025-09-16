@@ -40,6 +40,11 @@
 #toggle-charts-btn {
     margin-bottom: 0;
 }
+
+/* Add this to ensure charts are responsive */
+canvas {
+    max-width: 100%;
+}
         
         header {
             background-color: var(--primary-color);
@@ -446,22 +451,29 @@
         </div>
     </div>
     
-    <div id="charts-container" style="display: none; margin-top: 20px;">
-        <div class="grid" style="grid-template-columns: repeat(2, 1fr);">
-            <div class="card">
-                <h3>Student Progress Distribution</h3>
+<div id="charts-container" style="display: none; margin-top: 20px;">
+    <div class="grid" style="grid-template-columns: repeat(2, 1fr);">
+        <div class="card">
+            <h3>Student Progress Distribution</h3>
+            <div class="chart-container">
                 <canvas id="progress-chart"></canvas>
             </div>
-            <div class="card">
-                <h3>Course Enrollment</h3>
+        </div>
+        <div class="card">
+            <h3>Course Enrollment</h3>
+            <div class="chart-container">
                 <canvas id="enrollment-chart"></canvas>
             </div>
-            <div class="card">
-                <h3>Task Completion Status</h3>
+        </div>
+        <div class="card">
+            <h3>Task Completion Status</h3>
+            <div class="chart-container">
                 <canvas id="tasks-chart"></canvas>
             </div>
-            <div class="card">
-                <h3>Student Status Overview</h3>
+        </div>
+        <div class="card">
+            <h3>Student Status Overview</h3>
+            <div class="chart-container">
                 <canvas id="status-chart"></canvas>
             </div>
         </div>
@@ -1428,70 +1440,72 @@ function renderStatusChart() {
             }
         }
         
-        // Render dashboard
-        function renderDashboard() {
-            try {
-                document.getElementById('total-students').textContent = appData.students?.length || 0;
-                document.getElementById('total-courses').textContent = appData.courses?.length || 0;
-                
-                // Calculate completion rate
-                let completed = 0;
-                appData.students?.forEach(student => {
-                    let allCompleted = true;
-                    for (const courseId in student.progress || {}) {
-                        const courseProgress = student.progress[courseId];
-                        for (const unitId in courseProgress?.units || {}) {
-                            if (courseProgress.units[unitId].completedTasks < courseProgress.units[unitId].totalTasks) {
-                                allCompleted = false;
-                                break;
-                            }
-                        }
-                        if (!allCompleted) break;
-                    }
-                    if (allCompleted && Object.keys(student.progress || {}).length > 0) {
-                        completed++;
-                    }
-// Update charts if they're visible
-if (document.getElementById('charts-container').style.display === 'block') {
-    renderCharts();
+// Render dashboard
+function renderDashboard() {
+    try {
+        document.getElementById('total-students').textContent = appData.students?.length || 0;
+        document.getElementById('total-courses').textContent = appData.courses?.length || 0;
+        
+        // Calculate completion rate
+        let completed = 0;
+        appData.students?.forEach(student => {
+            let allCompleted = true;
+            for (const courseId in student.progress || {}) {
+                const courseProgress = student.progress[courseId];
+                for (const unitId in courseProgress?.units || {}) {
+                    if (courseProgress.units[unitId].completedTasks < courseProgress.units[unitId].totalTasks) {
+                        allCompleted = false;
+                        break;
+                    }
+                }
+                if (!allCompleted) break;
+            }
+            if (allCompleted && Object.keys(student.progress || {}).length > 0) {
+                completed++;
+            }
+        });
+        
+        const completionRate = appData.students?.length > 0 ? Math.round((completed / appData.students.length) * 100) : 0;
+        document.getElementById('completion-rate').textContent = `${completionRate}%`;
+        
+        // Calculate at risk students
+        let atRisk = 0;
+        appData.students?.forEach(student => {
+            for (const courseId in student.progress || {}) {
+                const course = appData.courses?.find(c => c.id == courseId);
+                if (course) {
+                    const courseProgress = student.progress[courseId];
+                    let totalTasksCompleted = 0;
+                    let totalTasks = 0;
+                    
+                    for (const unitId in courseProgress?.units || {}) {
+                        totalTasksCompleted += courseProgress.units[unitId]?.completedTasks || 0;
+                        totalTasks += courseProgress.units[unitId]?.totalTasks || 0;
+                    }
+                    
+                    const progressPercentage = totalTasks > 0 ? (totalTasksCompleted / totalTasks) * 100 : 0;
+                    const weeksElapsed = getWeeksElapsed(courseId, student, courseProgress?.lastActivity);
+                    const expectedProgress = (weeksElapsed / course.duration) * 100;
+                    
+                    if (progressPercentage < expectedProgress - 20) {
+                        atRisk++;
+                        break;
+                    }
+                }
+            }
+        });
+        
+        document.getElementById('at-risk').textContent = atRisk;
+        
+        // Update charts if they're visible - MOVED THIS OUTSIDE THE FOR-EACH LOOP
+        if (document.getElementById('charts-container').style.display === 'block') {
+            renderCharts();
+        }
+    } catch (e) {
+        console.error('Error rendering dashboard:', e);
+    }
 }
-                });
-                
-                const completionRate = appData.students?.length > 0 ? Math.round((completed / appData.students.length) * 100) : 0;
-                document.getElementById('completion-rate').textContent = `${completionRate}%`;
-                
-                // Calculate at risk students
-                let atRisk = 0;
-                appData.students?.forEach(student => {
-                    for (const courseId in student.progress || {}) {
-                        const course = appData.courses?.find(c => c.id == courseId);
-                        if (course) {
-                            const courseProgress = student.progress[courseId];
-                            let totalTasksCompleted = 0;
-                            let totalTasks = 0;
-                            
-                            for (const unitId in courseProgress?.units || {}) {
-                                totalTasksCompleted += courseProgress.units[unitId]?.completedTasks || 0;
-                                totalTasks += courseProgress.units[unitId]?.totalTasks || 0;
-                            }
-                            
-                            const progressPercentage = totalTasks > 0 ? (totalTasksCompleted / totalTasks) * 100 : 0;
-                            const weeksElapsed = getWeeksElapsed(courseId, student, courseProgress?.lastActivity);
-                            const expectedProgress = (weeksElapsed / course.duration) * 100;
-                            
-                            if (progressPercentage < expectedProgress - 20) {
-                                atRisk++;
-                                break;
-                            }
-                        }
-                    }
-                });
-                
-                document.getElementById('at-risk').textContent = atRisk;
-            } catch (e) {
-                console.error('Error rendering dashboard:', e);
-            }
-        }
+});
         
         function getWeeksElapsed(courseId, student, lastActivityDate) {
             try {
@@ -2846,38 +2860,38 @@ if (document.getElementById('charts-container').style.display === 'block') {
             `;
         }
         
-        // Setup event listeners
-        function setupEventListeners() {
-            try {
+// Setup event listeners
+function setupEventListeners() {
+    try {
+        // Add this line for the charts toggle button
+        document.getElementById('toggle-charts-btn').addEventListener('click', toggleCharts);
 
-document.getElementById('toggle-charts-btn').addEventListener('click', toggleCharts);
-
-                // Close modals when clicking outside
-                document.querySelectorAll('.modal').forEach(modal => {
-                    modal.addEventListener('click', function(e) {
-                        if (e.target === this) {
-                            this.style.display = 'none';
-                        }
-                    });
-                });
-                
-                // Close modals when clicking close button
-                document.querySelectorAll('.close-modal').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        this.closest('.modal').style.display = 'none';
-                    });
-                });
-                
-                // Tab switching
-                tabs.forEach(tab => {
-                    tab.addEventListener('click', () => {
-                        tabs.forEach(t => t.classList.remove('active'));
-                        tabContents.forEach(c => c.classList.remove('active'));
-                        
-                        tab.classList.add('active');
-                        document.getElementById(tab.dataset.tab).classList.add('active');
-                    });
-                });
+        // Close modals when clicking outside
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.style.display = 'none';
+                }
+            });
+        });
+        
+        // Close modals when clicking close button
+        document.querySelectorAll('.close-modal').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.closest('.modal').style.display = 'none';
+            });
+        });
+        
+        // Tab switching
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
                 
                 // Student modal
                 document.getElementById('add-student-btn').addEventListener('click', () => showStudentModal());
