@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vocational Education Progress Tracker</title>
-    <style>
-        :root {
-            --primary-color: #4a6fa5;
-            --secondary-color: #166088;
-            --accent-color: #4fc3f7;
-            --light-color: #f8f9fa;
-            --dark-color: #343a40;
-            --success-color: #28a745;
-            --warning-color: #ffc107;
-            --danger-color: #dc3545;
-        }
-        
-        body {
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocational Education Progress Tracker</title>
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #166088;
+            --accent-color: #4fc3f7;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+        }
+        
+         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: var(--dark-color);
@@ -31,21 +31,6 @@
             padding: 20px;
         }
 
-.chart-container {
-    position: relative;
-    height: 250px;
-    width: 100%;
-}
-
-#toggle-charts-btn {
-    margin-bottom: 0;
-}
-
-/* Add this to ensure charts are responsive */
-canvas {
-    max-width: 100%;
-}
-        
         header {
             background-color: var(--primary-color);
             color: white;
@@ -404,9 +389,24 @@ canvas {
                 width: 90%;
                 margin: 10% auto;
             }
-        }
-    </style>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        #toggle-charts-btn {
+            margin-bottom: 0;
+        }
+
+        /* Add this to ensure charts are responsive */
+        canvas {
+            max-width: 100%;
+        }
+	}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <header>
@@ -799,9 +799,9 @@ canvas {
             </div>
         </div>
     </div>
-    
-    <script>
-        // Enhanced data structure with better error handling
+    
+    <script>
+
         let appData = {
             settings: {
                 institutionName: "Vocational Training Institute",
@@ -1025,1841 +1025,397 @@ canvas {
         const unitManagement = document.getElementById('unit-management');
         const colorThemeSelect = document.getElementById('color-theme');
         const customColorsSection = document.getElementById('custom-colors');
-        
-// Chart instances
-let progressChart, enrollmentChart, tasksChart, statusChart;
 
-// Toggle charts visibility
-function toggleCharts() {
-    const chartsContainer = document.getElementById('charts-container');
-    const toggleBtn = document.getElementById('toggle-charts-btn');
-    
-    if (chartsContainer.style.display === 'none') {
-        chartsContainer.style.display = 'block';
-        toggleBtn.textContent = 'Hide Charts';
-        renderCharts(); // Render charts when shown
-    } else {
-        chartsContainer.style.display = 'none';
-        toggleBtn.textContent = 'Show Charts';
-    }
-}
-
-// Render all charts
-function renderCharts() {
-    renderProgressChart();
-    renderEnrollmentChart();
-    renderTasksChart();
-    renderStatusChart();
-}
-
-// Student Progress Distribution Chart
-function renderProgressChart() {
-    const ctx = document.getElementById('progress-chart').getContext('2d');
-    
-    // Calculate progress distribution
-    const progressRanges = {
-        '0-25%': 0,
-        '26-50%': 0,
-        '51-75%': 0,
-        '76-99%': 0,
-        '100%': 0
-    };
-    
-    appData.students?.forEach(student => {
-        let totalProgress = 0;
-        let courseCount = 0;
         
-        for (const courseId in student.progress || {}) {
-            const courseProgress = student.progress[courseId];
-            let courseTasksCompleted = 0;
-            let courseTotalTasks = 0;
+        // Chart instances
+        let progressChart, enrollmentChart, tasksChart, statusChart;
+
+        // Toggle charts visibility
+        function toggleCharts() {
+            const chartsContainer = document.getElementById('charts-container');
+            const toggleBtn = document.getElementById('toggle-charts-btn');
             
-            for (const unitId in courseProgress?.units || {}) {
-                courseTasksCompleted += courseProgress.units[unitId]?.completedTasks || 0;
-                courseTotalTasks += courseProgress.units[unitId]?.totalTasks || 0;
+            if (chartsContainer.style.display === 'none') {
+                chartsContainer.style.display = 'block';
+                toggleBtn.textContent = 'Hide Charts';
+                renderCharts(); // Render charts when shown
+            } else {
+                chartsContainer.style.display = 'none';
+                toggleBtn.textContent = 'Show Charts';
             }
+        }
+
+        // Render all charts
+        function renderCharts() {
+            renderProgressChart();
+            renderEnrollmentChart();
+            renderTasksChart();
+            renderStatusChart();
+        }
+
+        // Student Progress Distribution Chart
+        function renderProgressChart() {
+            const ctx = document.getElementById('progress-chart').getContext('2d');
             
-            if (courseTotalTasks > 0) {
-                totalProgress += (courseTasksCompleted / courseTotalTasks) * 100;
-                courseCount++;
-            }
-        }
-        
-        const avgProgress = courseCount > 0 ? totalProgress / courseCount : 0;
-        
-        if (avgProgress === 100) {
-            progressRanges['100%']++;
-        } else if (avgProgress >= 76) {
-            progressRanges['76-99%']++;
-        } else if (avgProgress >= 51) {
-            progressRanges['51-75%']++;
-        } else if (avgProgress >= 26) {
-            progressRanges['26-50%']++;
-        } else {
-            progressRanges['0-25%']++;
-        }
-    });
-    
-    // Destroy previous chart if it exists
-    if (progressChart) {
-        progressChart.destroy();
-    }
-    
-    progressChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: Object.keys(progressRanges),
-            datasets: [{
-                label: 'Number of Students',
-                data: Object.values(progressRanges),
-                backgroundColor: [
-                    '#dc3545', // red
-                    '#ffc107', // yellow
-                    '#4fc3f7', // light blue
-                    '#4a6fa5', // blue
-                    '#28a745'  // green
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Number of Students'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Progress Range'
-                    }
-                }
-            }
-        }
-    });
-}
-
-// Course Enrollment Chart
-function renderEnrollmentChart() {
-    const ctx = document.getElementById('enrollment-chart').getContext('2d');
-    
-    // Calculate enrollment per course
-    const courseEnrollment = {};
-    appData.courses?.forEach(course => {
-        courseEnrollment[course.code] = appData.students?.filter(student => 
-            student.courses?.some(c => c.courseId === course.id)
-        ).length || 0;
-    });
-    
-    // Destroy previous chart if it exists
-    if (enrollmentChart) {
-        enrollmentChart.destroy();
-    }
-    
-    enrollmentChart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: Object.keys(courseEnrollment),
-            datasets: [{
-                data: Object.values(courseEnrollment),
-                backgroundColor: [
-                    '#4a6fa5',
-                    '#166088',
-                    '#4fc3f7',
-                    '#28a745',
-                    '#ffc107',
-                    '#dc3545',
-                    '#6f42c1'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right',
-                }
-            }
-        }
-    });
-}
-
-// Task Completion Status Chart
-function renderTasksChart() {
-    const ctx = document.getElementById('tasks-chart').getContext('2d');
-    
-    // Calculate task status counts
-    const taskStatuses = {
-        'completed': 0,
-        'not-started': 0,
-        'partial': 0,
-        'failed': 0
-    };
-    
-    appData.students?.forEach(student => {
-        for (const courseId in student.taskStatus || {}) {
-            for (const unitId in student.taskStatus[courseId] || {}) {
-                for (const taskId in student.taskStatus[courseId][unitId] || {}) {
-                    const status = student.taskStatus[courseId][unitId][taskId];
-                    taskStatuses[status]++;
-                }
-            }
-        }
-    });
-    
-    // Destroy previous chart if it exists
-    if (tasksChart) {
-        tasksChart.destroy();
-    }
-    
-    tasksChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(taskStatuses).map(key => {
-                return key.charAt(0).toUpperCase() + key.slice(1).replace('-', ' ');
-            }),
-            datasets: [{
-                data: Object.values(taskStatuses),
-                backgroundColor: [
-                    '#28a745', // completed - green
-                    '#6c757d', // not started - gray
-                    '#ffc107', // partial - yellow
-                    '#dc3545'  // failed - red
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right',
-                }
-            }
-        }
-    });
-}
-
-// Student Status Overview Chart
-function renderStatusChart() {
-    const ctx = document.getElementById('status-chart').getContext('2d');
-    
-    // Calculate student status counts
-    const studentStatuses = {
-        'on-track': 0,
-        'behind': 0,
-        'at-risk': 0,
-        'completed': 0
-    };
-    
-    appData.students?.forEach(student => {
-        let status = 'on-track';
-        let hasCompleted = false;
-        
-        for (const courseId in student.progress || {}) {
-            const courseStatus = getStudentStatus(student, courseId);
+            // Calculate progress distribution
+            const progressRanges = {
+                '0-25%': 0,
+                '26-50%': 0,
+                '51-75%': 0,
+                '76-99%': 0,
+                '100%': 0
+            };
             
-            if (courseStatus === 'completed') {
-                hasCompleted = true;
-            } else if (courseStatus === 'at-risk' && status !== 'at-risk') {
-                status = 'at-risk';
-            } else if (courseStatus === 'behind' && status !== 'at-risk' && status !== 'behind') {
-                status = 'behind';
-            }
-        }
-        
-        if (hasCompleted && Object.keys(student.progress || {}).length > 0) {
-            studentStatuses['completed']++;
-        } else {
-            studentStatuses[status]++;
-        }
-    });
-    
-    // Destroy previous chart if it exists
-    if (statusChart) {
-        statusChart.destroy();
-    }
-    
-    statusChart = new Chart(ctx, {
-        type: 'polarArea',
-        data: {
-            labels: Object.keys(studentStatuses).map(key => {
-                return formatStatus(key);
-            }),
-            datasets: [{
-                data: Object.values(studentStatuses),
-                backgroundColor: [
-                    '#28a745', // completed - green
-                    '#4a6fa5', // on track - blue
-                    '#ffc107', // behind - yellow
-                    '#dc3545'  // at risk - red
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right',
-                }
-            }
-        }
-    });
-}
-
-        // Initialize the app
-        function initApp() {
-            backfillStartDates();
-            loadSettings();
-            renderDashboard();
-            renderStudents();
-            renderCourses();
-            renderRecentActivity();
-            setupEventListeners();
-            
-            // Initialize report filters
-            const reportCourseSelect = document.getElementById('report-course');
-            reportCourseSelect.innerHTML = '<option value="all">All Courses</option>';
-            appData.courses?.forEach(course => {
-                const option = document.createElement('option');
-                option.value = course.id;
-                option.textContent = `${course.code} - ${course.name}`;
-                reportCourseSelect.appendChild(option);
-            });
-            
-            // Set default date range (last 30 days)
-            const today = new Date();
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(today.getDate() - 30);
-            
-            document.getElementById('report-start-date').value = thirtyDaysAgo.toISOString().split('T')[0];
-            document.getElementById('report-end-date').value = today.toISOString().split('T')[0];
-        }
-
-        // Backfill start dates for existing courses
-        function backfillStartDates() {
-            appData.courses.forEach((course, index) => {
-                if (!course.startDate && !course.rollingIntake) {
-                    // Set a default start date for non-rolling intake courses
-                    const defaultDate = new Date();
-                    defaultDate.setMonth(defaultDate.getMonth() - 3 + index);
-                    course.startDate = defaultDate.toISOString().split('T')[0];
-                }
-            });
-        }
-        
-        // Load settings from localStorage or use defaults
-        function loadSettings() {
-            try {
-                const savedData = localStorage.getItem('vocationalProgressTracker');
-                if (savedData) {
-                    const parsedData = JSON.parse(savedData);
-                    // Validate the loaded data structure
-                    if (parsedData && 
-                        typeof parsedData === 'object' && 
-                        parsedData.settings && 
-                        parsedData.students && 
-                        parsedData.courses && 
-                        parsedData.activityLog) {
-                        appData = parsedData;
-                    } else {
-                        console.warn('Invalid data structure in localStorage, using default data');
-                    }
-                }
-                
-                // Apply settings
-                document.getElementById('institution-name').value = appData.settings.institutionName || '';
-                document.getElementById('color-theme').value = appData.settings.theme || 'blue';
-                
-                if (appData.settings.theme === 'custom') {
-                    customColorsSection.style.display = 'block';
-                    document.getElementById('custom-primary').value = appData.settings.colors?.primary || '#4a6fa5';
-                    document.getElementById('custom-secondary').value = appData.settings.colors?.secondary || '#166088';
-                    document.getElementById('custom-accent').value = appData.settings.colors?.accent || '#4fc3f7';
-                }
-                
-                applyTheme();
-            } catch (e) {
-                console.error('Error loading settings:', e);
-                alert('Error loading settings. Using default configuration.');
-            }
-        }
-        
-        // Save data to localStorage
-        function saveData() {
-            try {
-                localStorage.setItem('vocationalProgressTracker', JSON.stringify(appData));
-            } catch (e) {
-                console.error('Error saving data:', e);
-                alert('Error saving data. Changes may not be persisted.');
-            }
-        }
-        
-        // Apply theme colors
-        function applyTheme() {
-            const root = document.documentElement;
-            const settings = appData.settings;
-            
-            if (settings.theme === 'custom') {
-                root.style.setProperty('--primary-color', settings.colors?.primary || '#4a6fa5');
-                root.style.setProperty('--secondary-color', settings.colors?.secondary || '#166088');
-                root.style.setProperty('--accent-color', settings.colors?.accent || '#4fc3f7');
-            } else {
-                // Predefined themes
-                switch(settings.theme) {
-                    case 'green':
-                        root.style.setProperty('--primary-color', '#2e7d32');
-                        root.style.setProperty('--secondary-color', '#1b5e20');
-                        root.style.setProperty('--accent-color', '#69f0ae');
-                        break;
-                    case 'red':
-                        root.style.setProperty('--primary-color', '#c62828');
-                        root.style.setProperty('--secondary-color', '#8e0000');
-                        root.style.setProperty('--accent-color', '#ff8a80');
-                        break;
-                    case 'purple':
-                        root.style.setProperty('--primary-color', '#6a1b9a');
-                        root.style.setProperty('--secondary-color', '#4a148c');
-                        root.style.setProperty('--accent-color', '#ea80fc');
-                        break;
-                    default: // blue
-                        root.style.setProperty('--primary-color', '#4a6fa5');
-                        root.style.setProperty('--secondary-color', '#166088');
-                        root.style.setProperty('--accent-color', '#4fc3f7');
-                }
-            }
-        }
-        
-// Render dashboard
-function renderDashboard() {
-    try {
-        document.getElementById('total-students').textContent = appData.students?.length || 0;
-        document.getElementById('total-courses').textContent = appData.courses?.length || 0;
-        
-        // Calculate completion rate
-        let completed = 0;
-        appData.students?.forEach(student => {
-            let allCompleted = true;
-            for (const courseId in student.progress || {}) {
-                const courseProgress = student.progress[courseId];
-                for (const unitId in courseProgress?.units || {}) {
-                    if (courseProgress.units[unitId].completedTasks < courseProgress.units[unitId].totalTasks) {
-                        allCompleted = false;
-                        break;
-                    }
-                }
-                if (!allCompleted) break;
-            }
-            if (allCompleted && Object.keys(student.progress || {}).length > 0) {
-                completed++;
-            }
-        });
-        
-        const completionRate = appData.students?.length > 0 ? Math.round((completed / appData.students.length) * 100) : 0;
-        document.getElementById('completion-rate').textContent = `${completionRate}%`;
-        
-        // Calculate at risk students
-        let atRisk = 0;
-        appData.students?.forEach(student => {
-            for (const courseId in student.progress || {}) {
-                const course = appData.courses?.find(c => c.id == courseId);
-                if (course) {
+            appData.students?.forEach(student => {
+                let totalProgress = 0;
+                let courseCount = 0;
+                
+                for (const courseId in student.progress || {}) {
                     const courseProgress = student.progress[courseId];
-                    let totalTasksCompleted = 0;
-                    let totalTasks = 0;
+                    let courseTasksCompleted = 0;
+                    let courseTotalTasks = 0;
                     
                     for (const unitId in courseProgress?.units || {}) {
-                        totalTasksCompleted += courseProgress.units[unitId]?.completedTasks || 0;
-                        totalTasks += courseProgress.units[unitId]?.totalTasks || 0;
+                        courseTasksCompleted += courseProgress.units[unitId]?.completedTasks || 0;
+                        courseTotalTasks += courseProgress.units[unitId]?.totalTasks || 0;
                     }
                     
-                    const progressPercentage = totalTasks > 0 ? (totalTasksCompleted / totalTasks) * 100 : 0;
-                    const weeksElapsed = getWeeksElapsed(courseId, student, courseProgress?.lastActivity);
-                    const expectedProgress = (weeksElapsed / course.duration) * 100;
-                    
-                    if (progressPercentage < expectedProgress - 20) {
-                        atRisk++;
-                        break;
+                    if (courseTotalTasks > 0) {
+                        totalProgress += (courseTasksCompleted / courseTotalTasks) * 100;
+                        courseCount++;
                     }
                 }
+                
+                const avgProgress = courseCount > 0 ? totalProgress / courseCount : 0;
+                
+                if (avgProgress === 100) {
+                    progressRanges['100%']++;
+                } else if (avgProgress >= 76) {
+                    progressRanges['76-99%']++;
+                } else if (avgProgress >= 51) {
+                    progressRanges['51-75%']++;
+                } else if (avgProgress >= 26) {
+                    progressRanges['26-50%']++;
+                } else {
+                    progressRanges['0-25%']++;
+                }
+            });
+            
+            // Destroy previous chart if it exists
+            if (progressChart) {
+                progressChart.destroy();
             }
-        });
-        
-        document.getElementById('at-risk').textContent = atRisk;
-        
-        // Update charts if they're visible - MOVED THIS OUTSIDE THE FOR-EACH LOOP
-        if (document.getElementById('charts-container').style.display === 'block') {
-            renderCharts();
+            
+            progressChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(progressRanges),
+                    datasets: [{
+                        label: 'Number of Students',
+                        data: Object.values(progressRanges),
+                        backgroundColor: [
+                            '#dc3545', // red
+                            '#ffc107', // yellow
+                            '#4fc3f7', // light blue
+                            '#4a6fa5', // blue
+                            '#28a745'  // green
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Students'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Progress Range'
+                            }
+                        }
+                    }
+                }
+            });
         }
-    } catch (e) {
-        console.error('Error rendering dashboard:', e);
-    }
-}
-});
-        
-        function getWeeksElapsed(courseId, student, lastActivityDate) {
-            try {
-                const course = appData.courses?.find(c => c.id == courseId);
-                if (!course) return 1; // Fallback if course not found
 
-                // Get the appropriate start date
-                let startDate;
-                if (course.rollingIntake) {
-                    // For rolling intake courses, use the student's individual start date
-                    const studentCourse = student.courses?.find(c => c.courseId == courseId);
-                    startDate = studentCourse?.startDate;
-                } else {
-                    // For classroom-based courses, use the course start date
-                    startDate = course.startDate;
-                }
+        // Course Enrollment Chart
+        function renderEnrollmentChart() {
+            const ctx = document.getElementById('enrollment-chart').getContext('2d');
+            
+            // Calculate enrollment per course
+            const courseEnrollment = {};
+            appData.courses?.forEach(course => {
+                courseEnrollment[course.code] = appData.students?.filter(student => 
+                    student.courses?.some(c => c.courseId === course.id)
+                ).length || 0;
+            });
+            
+            // Destroy previous chart if it exists
+            if (enrollmentChart) {
+                enrollmentChart.destroy();
+            }
+            
+            enrollmentChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(courseEnrollment),
+                    datasets: [{
+                        data: Object.values(courseEnrollment),
+                        backgroundColor: [
+                            '#4a6fa5',
+                            '#166088',
+                            '#4fc3f7',
+                            '#28a745',
+                            '#ffc107',
+                            '#dc3545',
+                            '#6f42c1'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+        }
 
-                if (!startDate) return 1; // Fallback if no date set
+        // Task Completion Status Chart
+        function renderTasksChart() {
+            const ctx = document.getElementById('tasks-chart').getContext('2d');
+            
+            // Calculate task status counts
+            const taskStatuses = {
+                'completed': 0,
+                'not-started': 0,
+                'partial': 0,
+                'failed': 0
+            };
+            
+            appData.students?.forEach(student => {
+                for (const courseId in student.taskStatus || {}) {
+                    for (const unitId in student.taskStatus[courseId] || {}) {
+                        for (const taskId in student.taskStatus[courseId][unitId] || {}) {
+                            const status = student.taskStatus[courseId][unitId][taskId];
+                            taskStatuses[status]++;
+                        }
+                    }
+                }
+            });
+            
+            // Destroy previous chart if it exists
+            if (tasksChart) {
+                tasksChart.destroy();
+            }
+            
+            tasksChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(taskStatuses).map(key => {
+                        return key.charAt(0).toUpperCase() + key.slice(1).replace('-', ' ');
+                    }),
+                    datasets: [{
+                        data: Object.values(taskStatuses),
+                        backgroundColor: [
+                            '#28a745', // completed - green
+                            '#6c757d', // not started - gray
+                            '#ffc107', // partial - yellow
+                            '#dc3545'  // failed - red
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+        }
 
-                const start = new Date(startDate);
-                const end = lastActivityDate ? new Date(lastActivityDate) : new Date();
-                
-                // Handle invalid dates
-                if (isNaN(start.getTime())) return 1;
-                if (isNaN(end.getTime())) return 1;
-                
-                // Calculate difference in milliseconds
-                const diffMs = end - start;
-                if (diffMs < 0) return 1; // If end is before start
-                
-                const msPerWeek = 1000 * 60 * 60 * 24 * 7;
-                const weeks = Math.floor(diffMs / msPerWeek);
-                
-                // Return weeks elapsed, clamped between 1 and course duration
-                return Math.max(1, Math.min(weeks, course.duration));
-            } catch (e) {
-                console.error("Date calculation error:", e);
-                return 1; // Fallback value
-            }
-        }
-        
-        // Render students in table format with edit/delete buttons
-        function renderStudents(filter = '') {
-            try {
-                const tbody = studentsTable.querySelector('tbody');
-                tbody.innerHTML = '';
-                
-                const courseFilter = document.getElementById('course-filter').value;
-                const statusFilter = document.getElementById('status-filter').value;
-                
-                // Populate course filter
-                const courseFilterSelect = document.getElementById('course-filter');
-                if (courseFilterSelect.options.length <= 1) {
-                    appData.courses?.forEach(course => {
-                        const option = document.createElement('option');
-                        option.value = course.id;
-                        option.textContent = `${course.code} - ${course.name}`;
-                        courseFilterSelect.appendChild(option);
-                    });
-                }
-                
-                appData.students?.forEach(student => {
-                    if (!student) return;
-                    
-                    const fullName = `${student.firstName || ''} ${student.lastName || ''}`.trim();
-                    if (filter && !fullName.toLowerCase().includes(filter.toLowerCase())) {
-                        return;
-                    }
-                    
-                    // Check course filter
-                    if (courseFilter && !student.courses?.some(c => c.courseId === parseInt(courseFilter))) {
-                        return;
-                    }
-                    
-                    // Check status filter
-                    if (statusFilter) {
-                        let matchesStatus = false;
-                        
-                        for (const courseObj of student.courses || []) {
-                            const status = getStudentStatus(student, courseObj.courseId);
-                            
-                            if (status === statusFilter) {
-                                matchesStatus = true;
-                                break;
-                            }
-                        }
-                        
-                        if (!matchesStatus) return;
-                    }
-                    
-                    const row = document.createElement('tr');
-                    
-                    // Calculate overall progress
-                    let overallProgress = 0;
-                    let totalCourses = 0;
-                    let status = 'on-track';
-                    
-                    for (const courseObj of student.courses || []) {
-                        const courseId = courseObj.courseId;
-                        const courseProgress = student.progress?.[courseId] || { units: {} };
-                        let courseTasksCompleted = 0;
-                        let courseTotalTasks = 0;
-                        
-                        for (const unitId in courseProgress.units || {}) {
-                            courseTasksCompleted += courseProgress.units[unitId]?.completedTasks || 0;
-                            courseTotalTasks += courseProgress.units[unitId]?.totalTasks || 0;
-                        }
-                        
-                        if (courseTotalTasks > 0) {
-                            overallProgress += (courseTasksCompleted / courseTotalTasks) * 100;
-                            totalCourses++;
-                        }
-                        
-                        const courseStatus = getStudentStatus(student, courseId);
-                        if (courseStatus === 'at-risk') {
-                            status = 'at-risk';
-                        } else if (courseStatus === 'behind' && status !== 'at-risk') {
-                            status = 'behind';
-                        }
-                    }
-                    
-                    overallProgress = totalCourses > 0 ? Math.round(overallProgress / totalCourses) : 0;
-                    
-                    // Get enrolled courses names
-                    const enrolledCourses = student.courses?.map(courseObj => {
-                        const course = appData.courses?.find(c => c.id === courseObj.courseId);
-                        return course ? course.code : '';
-                    }).filter(name => name).join(', ') || 'None';
-                    
-                    row.innerHTML = `
-                        <td>${student.id}</td>
-                        <td>${fullName}</td>
-                        <td>${student.email || 'N/A'}</td>
-                        <td>${enrolledCourses}</td>
-                        <td>
-                            <button class="btn" data-student-id="${student.id}" data-action="edit">Edit</button>
-                            <button class="btn btn-danger" data-student-id="${student.id}" data-action="delete">Delete</button>
-                            <button class="btn" data-student-id="${student.id}" data-action="view">View</button>
-                        </td>
-                    `;
-                    
-                    tbody.appendChild(row);
-                });
-            } catch (e) {
-                console.error('Error rendering students:', e);
-            }
-        }
-        
-        function getStudentStatus(student, courseId) {
-            try {
-                const courseProgress = student.progress?.[courseId];
-                if (!courseProgress) return 'on-track';
-                
-                const course = appData.courses?.find(c => c.id == courseId);
-                if (!course) return 'on-track';
-                
-                // Check if all units are completed
-                let allUnitsCompleted = true;
-                let totalTasksCompleted = 0;
-                let totalTasks = 0;
-                
-                for (const unitId in courseProgress?.units || {}) {
-                    const unitProgress = courseProgress.units[unitId];
-                    if (unitProgress?.completedTasks < unitProgress?.totalTasks) {
-                        allUnitsCompleted = false;
-                    }
-                    totalTasksCompleted += unitProgress?.completedTasks || 0;
-                    totalTasks += unitProgress?.totalTasks || 0;
-                }
-                
-                if (allUnitsCompleted && totalTasks > 0) return 'completed';
-                
-                // Calculate progress with actual dates
-                const progressPercentage = totalTasks > 0 ? (totalTasksCompleted / totalTasks) * 100 : 0;
-                const weeksElapsed = getWeeksElapsed(courseId, student, courseProgress?.lastActivity);
-                const expectedProgress = (weeksElapsed / course.duration) * 100;
-                
-                if (progressPercentage < expectedProgress - 20) return 'at-risk';
-                if (progressPercentage < expectedProgress - 10) return 'behind';
-                return 'on-track';
-            } catch (e) {
-                console.error('Error getting student status:', e);
-                return 'on-track';
-            }
-        }
-        
-        function formatStatus(status) {
-            switch(status) {
-                case 'on-track': return 'On Track';
-                case 'behind': return 'Behind';
-                case 'at-risk': return 'At Risk';
-                case 'completed': return 'Completed';
-                default: return status;
-            }
-        }
-        
-        function getStatusBadgeClass(status) {
-            switch(status) {
-                case 'on-track': return 'badge-success';
-                case 'behind': return 'badge-warning';
-                case 'at-risk': return 'badge-danger';
-                case 'completed': return 'badge-success';
-                default: return '';
-            }
-        }
-        
-        // Render courses
-        function renderCourses() {
-            try {
-                const tbody = coursesTable.querySelector('tbody');
-                tbody.innerHTML = '';
-                
-                // Populate course filter in reports
-                const reportCourseSelect = document.getElementById('report-course');
-                reportCourseSelect.innerHTML = '<option value="all">All Courses</option>';
-                appData.courses?.forEach(course => {
-                    const option = document.createElement('option');
-                    option.value = course.id;
-                    option.textContent = `${course.code} - ${course.name}`;
-                    reportCourseSelect.appendChild(option);
-                });
-                
-                appData.courses?.forEach(course => {
-                    if (!course) return;
-                    
-                    const enrolledStudents = appData.students?.filter(student => 
-                        student.courses?.some(c => c.courseId === course.id)
-                    ).length || 0;
-                    
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${course.code}</td>
-                        <td>${course.name}</td>
-                        <td>${course.duration} weeks</td>
-                        <td>${course.rollingIntake ? 'Rolling Intake' : (course.startDate || 'Not set')}</td>
-                        <td>${course.rollingIntake ? 'Yes' : 'No'}</td>
-                        <td>${enrolledStudents}</td>
-                        <td>
-                            <button class="btn" data-course-id="${course.id}" data-action="edit">Edit</button>
-                            <button class="btn btn-danger" data-course-id="${course.id}" data-action="delete">Delete</button>
-                            <button class="btn" data-course-id="${course.id}" data-action="units">Units</button>
-                        </td>
-                    `;
-                    
-                    tbody.appendChild(row);
-                });
-            } catch (e) {
-                console.error('Error rendering courses:', e);
-            }
-        }
-        
-        // Render recent activity
-        function renderRecentActivity() {
-            try {
-                const tbody = recentActivityTable.querySelector('tbody');
-                tbody.innerHTML = '';
-                
-                // Show only the 5 most recent activities
-                const recentActivities = [...(appData.activityLog || [])].sort((a, b) => 
-                    new Date(b.date) - new Date(a.date)
-                ).slice(0, 5);
-                
-                recentActivities.forEach(activity => {
-                    const student = appData.students?.find(s => s.id === activity.studentId);
-                    const course = appData.courses?.find(c => c.id === activity.courseId);
-                    const unit = course ? course.units?.find(u => u.id === activity.unitId) : null;
-                    const task = unit ? unit.tasks?.find(t => t.id === activity.taskId) : null;
-                    
-                    if (student && course) {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${activity.date}</td>
-                            <td>${student.firstName} ${student.lastName}</td>
-                            <td>${course.code}</td>
-                            <td>${activity.activity || 
-                                (unit ? `Unit ${unit.code}` : '') + 
-                                (task ? ` - Task: ${task.name}` : '')}</td>
-                            <td><span class="badge ${getStatusBadgeClass(activity.status)}">${formatStatus(activity.status)}</span></td>
-                        `;
-                        tbody.appendChild(row);
-                    }
-                });
-            } catch (e) {
-                console.error('Error rendering recent activity:', e);
-            }
-        }
-        
-        // Show student details modal
-        function showStudentDetails(studentId) {
-            try {
-                const student = appData.students?.find(s => s.id === studentId);
-                if (!student) return;
-                
-                document.getElementById('student-detail-name').textContent = `${student.firstName || ''} ${student.lastName || ''}`;
-                document.getElementById('student-detail-email').textContent = student.email || 'N/A';
-                document.getElementById('student-detail-phone').textContent = student.phone || 'N/A';
-                
-                // Calculate overall status and progress
-                let overallProgress = 0;
-                let totalCourses = 0;
-                let status = 'on-track';
-                
-                for (const courseObj of student.courses || []) {
-                    const courseId = courseObj.courseId;
-                    const courseProgress = student.progress?.[courseId] || { units: {} };
-                    let courseTasksCompleted = 0;
-                    let courseTotalTasks = 0;
-                    
-                    for (const unitId in courseProgress.units || {}) {
-                        courseTasksCompleted += courseProgress.units[unitId]?.completedTasks || 0;
-                        courseTotalTasks += courseProgress.units[unitId]?.totalTasks || 0;
-                    }
-                    
-                    if (courseTotalTasks > 0) {
-                        overallProgress += (courseTasksCompleted / courseTotalTasks) * 100;
-                        totalCourses++;
-                    }
-                    
-                    const courseStatus = getStudentStatus(student, courseId);
-                    if (courseStatus === 'at-risk') {
-                        status = 'at-risk';
-                    } else if (courseStatus === 'behind' && status !== 'at-risk') {
-                        status = 'behind';
-                    }
-                }
-                
-                overallProgress = totalCourses > 0 ? Math.round(overallProgress / totalCourses) : 0;
-                
-                const statusBadge = document.getElementById('student-detail-status');
-                statusBadge.textContent = formatStatus(status);
-                statusBadge.className = `badge ${getStatusBadgeClass(status)}`;
-                
-                document.getElementById('student-detail-progress').innerHTML = `
-                    ${overallProgress}%
-                    <div class="progress-bar" style="margin-top: 5px;">
-                        <div class="progress" style="width: ${overallProgress}%"></div>
-                    </div>
-                `;
-                
-                // Render enrolled courses
-                const coursesList = document.getElementById('student-courses-list');
-                coursesList.innerHTML = '';
-                
-                student.courses?.forEach(courseObj => {
-                    const course = appData.courses?.find(c => c.id === courseObj.courseId);
-                    if (!course) return;
-                    
-                    const courseProgress = student.progress?.[course.id] || { units: {} };
-                    let courseTasksCompleted = 0;
-                    let courseTotalTasks = 0;
-                    
-                    // Calculate course progress
-                    for (const unitId in courseProgress.units || {}) {
-                        courseTasksCompleted += courseProgress.units[unitId]?.completedTasks || 0;
-                        courseTotalTasks += courseProgress.units[unitId]?.totalTasks || 0;
-                    }
-                    
-                    const progressPercentage = courseTotalTasks > 0 
-                        ? Math.round((courseTasksCompleted / courseTotalTasks) * 100) 
-                        : 0;
-                    const courseStatus = getStudentStatus(student, course.id);
-                    
-                    const courseCard = document.createElement('div');
-                    courseCard.className = 'card';
-                    courseCard.style.marginBottom = '10px';
-                    
-                    // Display appropriate start date
-                    const startDate = course.rollingIntake ? courseObj.startDate : course.startDate;
-                    
-                    courseCard.innerHTML = `
-                        <h3>${course.code} - ${course.name}</h3>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div style="flex: 1;">
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span>Progress:</span>
-                                    <span>${courseTasksCompleted} of ${courseTotalTasks} tasks (${progressPercentage}%)</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress" style="width: ${progressPercentage}%"></div>
-                                </div>
-                            </div>
-                            <span class="badge ${getStatusBadgeClass(courseStatus)}" style="margin-left: 15px;">${formatStatus(courseStatus)}</span>
-                        </div>
-                        <div style="margin-top: 10px;">
-                            <strong>Start Date:</strong> ${startDate || 'Not specified'}
-                        </div>
-                        <div style="margin-top: 10px;">
-                            <strong>Last Activity:</strong> ${courseProgress.lastActivity || 'No activity recorded'}
-                        </div>
-                        <div class="unit-container" id="course-units-${course.id}">
-                            <!-- Units will be inserted here -->
-                        </div>
-                    `;
-                    
-                    coursesList.appendChild(courseCard);
-                    
-                    // Render units for this course
-                    const unitsContainer = document.getElementById(`course-units-${course.id}`);
-                    
-                    // Only show units the student is enrolled in
-                    const enrolledUnits = courseObj.units || [];
-                    course.units
-                        ?.filter(unit => enrolledUnits.includes(unit.id))
-                        ?.sort((a, b) => a.order - b.order)
-                        ?.forEach(unit => {
-                            const unitProgress = courseProgress.units?.[unit.id] || { completedTasks: 0, totalTasks: unit.tasks?.length || 0 };
-                            const unitStatus = getUnitStatus(student, course.id, unit.id);
-                            const unitTasksCompleted = unitProgress.completedTasks;
-                            const unitTotalTasks = unitProgress.totalTasks;
-                            const unitPercentage = unitTotalTasks > 0 
-                                ? Math.round((unitTasksCompleted / unitTotalTasks) * 100) 
-                                : 0;
-                            
-                            const unitElement = document.createElement('div');
-                            unitElement.className = 'unit';
-                            unitElement.innerHTML = `
-                                <div class="unit-header">
-                                    <div>
-                                        <strong>${unit.code} - ${unit.name}</strong>
-                                        <span class="badge ${getStatusBadgeClass(unitStatus)}" style="margin-left: 10px;">${formatStatus(unitStatus)}</span>
-                                    </div>
-                                    <div>
-                                        ${unitTasksCompleted}/${unitTotalTasks} tasks
-                                        <span class="collapse-icon">▼</span>
-                                    </div>
-                                </div>
-                                <div class="unit-content" style="display: none;">
-                                    <p>${unit.description || 'No description available'}</p>
-                                    <div id="unit-tasks-${course.id}-${unit.id}">
-                                        <!-- Tasks will be inserted here -->
-                                    </div>
-                                </div>
-                            `;
-                            
-                            unitsContainer.appendChild(unitElement);
-                            
-                            // Add click event to unit header
-                            const unitHeader = unitElement.querySelector('.unit-header');
-                            const unitContent = unitElement.querySelector('.unit-content');
-                            unitHeader.addEventListener('click', () => {
-                                unitContent.style.display = unitContent.style.display === 'none' ? 'block' : 'none';
-                                unitHeader.classList.toggle('collapsed');
-                            });
-                            
-                            // Render tasks for this unit
-                            const tasksContainer = document.getElementById(`unit-tasks-${course.id}-${unit.id}`);
-                            unit.tasks?.forEach(task => {
-                                const taskStatus = student.taskStatus?.[course.id]?.[unit.id]?.[task.id] || 'not-started';
-                                const taskElement = document.createElement('div');
-                                taskElement.className = 'task-item';
-                                taskElement.innerHTML = `
-                                    <span>${task.name}</span>
-                                    <div class="task-status ${taskStatus}" data-course-id="${course.id}" data-unit-id="${unit.id}" data-task-id="${task.id}"></div>
-                                `;
-                                tasksContainer.appendChild(taskElement);
-                            });
-                            
-                            // Add click events to task status indicators
-                            tasksContainer.querySelectorAll('.task-status').forEach(statusIndicator => {
-                                statusIndicator.addEventListener('click', function() {
-                                    const courseId = parseInt(this.getAttribute('data-course-id'));
-                                    const unitId = parseInt(this.getAttribute('data-unit-id'));
-                                    const taskId = parseInt(this.getAttribute('data-task-id'));
-                                    
-                                    // Cycle through statuses
-                                    const currentStatus = this.className.replace('task-status', '').trim();
-                                    let newStatus;
-                                    
-                                    switch(currentStatus) {
-                                        case 'not-started':
-                                            newStatus = 'completed';
-                                            break;
-                                        case 'completed':
-                                            newStatus = 'partial';
-                                            break;
-                                        case 'partial':
-                                            newStatus = 'failed';
-                                            break;
-                                        case 'failed':
-                                            newStatus = 'not-started';
-                                            break;
-                                        default:
-                                            newStatus = 'completed';
-                                    }
-                                    
-                                    // Update UI
-                                    this.className = `task-status ${newStatus}`;
-                                    
-                                    // Update data
-                                    if (!student.taskStatus) student.taskStatus = {};
-                                    if (!student.taskStatus[courseId]) {
-                                        student.taskStatus[courseId] = {};
-                                    }
-                                    if (!student.taskStatus[courseId][unitId]) {
-                                        student.taskStatus[courseId][unitId] = {};
-                                    }
-                                    student.taskStatus[courseId][unitId][taskId] = newStatus;
-                                    
-                                    // Update progress counts
-                                    if (!student.progress) student.progress = {};
-                                    if (!student.progress[courseId]) {
-                                        student.progress[courseId] = { units: {} };
-                                    }
-                                    if (!student.progress[courseId].units[unitId]) {
-                                        student.progress[courseId].units[unitId] = { completedTasks: 0, totalTasks: unit.tasks?.length || 0 };
-                                    }
-                                    
-                                    // Recalculate completed tasks for this unit
-                                    let completedTasks = 0;
-                                    for (const taskId in student.taskStatus[courseId]?.[unitId] || {}) {
-                                        if (student.taskStatus[courseId][unitId][taskId] === 'completed') {
-                                            completedTasks++;
-                                        }
-                                    }
-                                    
-                                    student.progress[courseId].units[unitId].completedTasks = completedTasks;
-                                    student.progress[courseId].lastActivity = new Date().toISOString().split('T')[0];
-                                    
-                                    // Log activity
-                                    const task = unit.tasks?.find(t => t.id === taskId);
-                                    if (!appData.activityLog) appData.activityLog = [];
-                                    appData.activityLog.unshift({
-                                        date: new Date().toISOString().split('T')[0],
-                                        studentId: student.id,
-                                        courseId: courseId,
-                                        unitId: unitId,
-                                        taskId: taskId,
-                                        activity: `Task updated: ${unit.code} - ${task?.name || 'Unknown Task'}`,
-                                        status: newStatus === 'completed' ? 'completed' : 
-                                                newStatus === 'failed' ? 'failed' : 'progress'
-                                    });
-                                    
-                                    saveData();
-                                    renderDashboard();
-                                    renderRecentActivity();
-                                });
-                            });
-                        });
-                });
-                
-                studentDetailModal.style.display = 'block';
-            } catch (e) {
-                console.error('Error showing student details:', e);
-            }
-        }
-        
-        function getUnitStatus(student, courseId, unitId) {
-            try {
-                const courseProgress = student.progress?.[courseId];
-                if (!courseProgress || !courseProgress.units?.[unitId]) return 'not-started';
-                
-                const unitProgress = courseProgress.units[unitId];
-                if (unitProgress.completedTasks === unitProgress.totalTasks) return 'completed';
-                
-                const course = appData.courses?.find(c => c.id == courseId);
-                if (!course) return 'in-progress';
-                
-                const weeksElapsed = getWeeksElapsed(courseId, student, courseProgress?.lastActivity);
-                const expectedProgress = (weeksElapsed / course.duration) * 100;
-                const actualProgress = (unitProgress.completedTasks / unitProgress.totalTasks) * 100;
-                
-                if (actualProgress < expectedProgress - 20) return 'at-risk';
-                if (actualProgress < expectedProgress - 10) return 'behind';
-                return 'in-progress';
-            } catch (e) {
-                console.error('Error getting unit status:', e);
-                return 'in-progress';
-            }
-        }
-        
-        // Show student modal (add/edit)
-        function showStudentModal(studentId = null) {
-            try {
-                const form = document.getElementById('student-form');
-                const title = document.getElementById('student-modal-title');
-                const unitsContainer = document.getElementById('course-units-container');
-                const datesContainer = document.getElementById('student-course-dates-container');
-                
-                if (studentId) {
-                    // Edit mode
-                    const student = appData.students?.find(s => s.id === studentId);
-                    if (!student) return;
-                    
-                    title.textContent = `Edit ${student.firstName} ${student.lastName}`;
-                    document.getElementById('student-id').value = student.id;
-                    document.getElementById('student-first-name').value = student.firstName;
-                    document.getElementById('student-last-name').value = student.lastName;
-                    document.getElementById('student-email').value = student.email || '';
-                    document.getElementById('student-phone').value = student.phone || '';
-                    
-                    // Populate courses select
-                    const coursesSelect = document.getElementById('student-courses');
-                    coursesSelect.innerHTML = '';
-                    appData.courses?.forEach(course => {
-                        const option = document.createElement('option');
-                        option.value = course.id;
-                        option.textContent = `${course.code} - ${course.name}`;
-                        option.selected = student.courses?.some(c => c.courseId === course.id);
-                        coursesSelect.appendChild(option);
-                    });
-                    
-                    // Show unit selection for each course the student is enrolled in
-                    showUnitSelectionForStudent(student);
-                    
-                    // Show start date fields for rolling intake courses
-                    showCourseDateFieldsForStudent(student);
-                } else {
-                    // Add mode
-                    title.textContent = 'Add New Student';
-                    form.reset();
-                    document.getElementById('student-id').value = '';
-                    unitsContainer.innerHTML = '';
-                    unitsContainer.style.display = 'none';
-                    datesContainer.innerHTML = '';
-                    datesContainer.style.display = 'none';
-                    
-                    // Populate courses select
-                    const coursesSelect = document.getElementById('student-courses');
-                    coursesSelect.innerHTML = '';
-                    appData.courses?.forEach(course => {
-                        const option = document.createElement('option');
-                        option.value = course.id;
-                        option.textContent = `${course.code} - ${course.name}`;
-                        coursesSelect.appendChild(option);
-                    });
-                }
-                
-                // Add event listener for course selection change
-                document.getElementById('student-courses').addEventListener('change', function() {
-                    const selectedCourses = Array.from(this.selectedOptions).map(option => parseInt(option.value));
-                    const studentId = document.getElementById('student-id').value;
-                    
-                    if (studentId) {
-                        // Editing existing student
-                        const student = appData.students?.find(s => s.id === parseInt(studentId));
-                        if (student) {
-                            showUnitSelectionForStudent(student, selectedCourses);
-                            showCourseDateFieldsForStudent(student, selectedCourses);
-                        }
-                    } else {
-                        // New student - show unit selection for all selected courses
-                        showUnitSelectionForNewStudent(selectedCourses);
-                        showCourseDateFieldsForNewStudent(selectedCourses);
-                    }
-                });
-                
-                studentModal.style.display = 'block';
-            } catch (e) {
-                console.error('Error showing student modal:', e);
-            }
-        }
-        
-        // Show unit selection for an existing student
-        function showUnitSelectionForStudent(student, selectedCourseIds = null) {
-            try {
-                const unitsContainer = document.getElementById('course-units-container');
-                unitsContainer.innerHTML = '';
-                
-                const coursesToShow = selectedCourseIds 
-                    ? appData.courses?.filter(course => selectedCourseIds.includes(course.id))
-                    : appData.courses?.filter(course => student.courses?.some(c => c.courseId === course.id));
-                
-                if (!coursesToShow || coursesToShow.length === 0) {
-                    unitsContainer.style.display = 'none';
-                    return;
-                }
-                
-                unitsContainer.style.display = 'block';
-                
-                coursesToShow.forEach(course => {
-                    const studentCourse = student.courses?.find(c => c.courseId === course.id) || { courseId: course.id, units: [] };
-                    const enrolledUnits = studentCourse.units || [];
-                    
-                    const courseDiv = document.createElement('div');
-                    courseDiv.className = 'card';
-                    courseDiv.style.marginBottom = '15px';
-                    courseDiv.innerHTML = `
-                        <h4>${course.code} - ${course.name}</h4>
-                        <p>Select units for this student:</p>
-                        <div class="unit-selector" id="unit-selector-${course.id}"></div>
-                    `;
-                    
-                    unitsContainer.appendChild(courseDiv);
-                    
-                    const unitSelector = document.getElementById(`unit-selector-${course.id}`);
-                    course.units?.sort((a, b) => a.order - b.order).forEach(unit => {
-                        const unitDiv = document.createElement('div');
-                        unitDiv.className = 'unit-select-item';
-                        unitDiv.innerHTML = `
-                            <label>
-                                <input type="checkbox" class="unit-checkbox" 
-                                       data-course-id="${course.id}" 
-                                       data-unit-id="${unit.id}"
-                                       ${enrolledUnits.includes(unit.id) ? 'checked' : ''}>
-                                ${unit.code} - ${unit.name}
-                            </label>
-                        `;
-                        unitSelector.appendChild(unitDiv);
-                    });
-                });
-            } catch (e) {
-                console.error('Error showing unit selection:', e);
-            }
-        }
-        
-        // Show unit selection for a new student
-        function showUnitSelectionForNewStudent(selectedCourseIds) {
-            try {
-                const unitsContainer = document.getElementById('course-units-container');
-                unitsContainer.innerHTML = '';
-                
-                const coursesToShow = appData.courses?.filter(course => selectedCourseIds.includes(course.id));
-                
-                if (!coursesToShow || coursesToShow.length === 0) {
-                    unitsContainer.style.display = 'none';
-                    return;
-                }
-                
-                unitsContainer.style.display = 'block';
-                
-                coursesToShow.forEach(course => {
-                    const courseDiv = document.createElement('div');
-                    courseDiv.className = 'card';
-                    courseDiv.style.marginBottom = '15px';
-                    courseDiv.innerHTML = `
-                        <h4>${course.code} - ${course.name}</h4>
-                        <p>Select units for this student:</p>
-                        <div class="unit-selector" id="unit-selector-${course.id}"></div>
-                    `;
-                    
-                    unitsContainer.appendChild(courseDiv);
-                    
-                    const unitSelector = document.getElementById(`unit-selector-${course.id}`);
-                    course.units?.sort((a, b) => a.order - b.order).forEach(unit => {
-                        const unitDiv = document.createElement('div');
-                        unitDiv.className = 'unit-select-item';
-                        unitDiv.innerHTML = `
-                            <label>
-                                <input type="checkbox" class="unit-checkbox" 
-                                       data-course-id="${course.id}" 
-                                       data-unit-id="${unit.id}"
-                                       checked>
-                                ${unit.code} - ${unit.name}
-                            </label>
-                        `;
-                        unitSelector.appendChild(unitDiv);
-                    });
-                });
-            } catch (e) {
-                console.error('Error showing unit selection for new student:', e);
-            }
-        }
-        
-        // Show course date fields for an existing student
-        function showCourseDateFieldsForStudent(student, selectedCourseIds = null) {
-            try {
-                const datesContainer = document.getElementById('student-course-dates-container');
-                datesContainer.innerHTML = '';
-                
-                const coursesToShow = selectedCourseIds 
-                    ? appData.courses?.filter(course => selectedCourseIds.includes(course.id) && course.rollingIntake)
-                    : appData.courses?.filter(course => student.courses?.some(c => c.courseId === course.id) && course.rollingIntake);
-                
-                if (!coursesToShow || coursesToShow.length === 0) {
-                    datesContainer.style.display = 'none';
-                    return;
-                }
-                
-                datesContainer.style.display = 'block';
-                
-                coursesToShow.forEach(course => {
-                    const studentCourse = student.courses?.find(c => c.courseId === course.id) || { courseId: course.id, startDate: '' };
-                    
-                    const dateDiv = document.createElement('div');
-                    dateDiv.className = 'form-group';
-                    dateDiv.innerHTML = `
-                        <label for="student-course-${course.id}-start-date">Start Date for ${course.code} - ${course.name}</label>
-                        <input type="date" id="student-course-${course.id}-start-date" 
-                               value="${studentCourse.startDate || ''}">
-                    `;
-                    datesContainer.appendChild(dateDiv);
-                });
-            } catch (e) {
-                console.error('Error showing course date fields:', e);
-            }
-        }
-        
-        // Show course date fields for a new student
-        function showCourseDateFieldsForNewStudent(selectedCourseIds) {
-            try {
-                const datesContainer = document.getElementById('student-course-dates-container');
-                datesContainer.innerHTML = '';
-                
-                const coursesToShow = appData.courses?.filter(course => 
-                    selectedCourseIds.includes(course.id) && course.rollingIntake
-                );
-                
-                if (!coursesToShow || coursesToShow.length === 0) {
-                    datesContainer.style.display = 'none';
-                    return;
-                }
-                
-                datesContainer.style.display = 'block';
-                
-                coursesToShow.forEach(course => {
-                    const dateDiv = document.createElement('div');
-                    dateDiv.className = 'form-group';
-                    dateDiv.innerHTML = `
-                        <label for="student-course-${course.id}-start-date">Start Date for ${course.code} - ${course.name}</label>
-                        <input type="date" id="student-course-${course.id}-start-date" 
-                               value="${new Date().toISOString().split('T')[0]}">
-                    `;
-                    datesContainer.appendChild(dateDiv);
-                });
-            } catch (e) {
-                console.error('Error showing course date fields for new student:', e);
-            }
-        }
-        
-        // Show course modal (add/edit)
-        function showCourseModal(courseId = null) {
-            try {
-                const form = document.getElementById('course-form');
-                const title = document.getElementById('course-modal-title');
-                
-                if (courseId) {
-                    // Edit mode
-                    const course = appData.courses?.find(c => c.id === courseId);
-                    if (!course) return;
-                    
-                    title.textContent = `Edit ${course.code} - ${course.name}`;
-                    document.getElementById('course-id').value = course.id;
-                    document.getElementById('course-code').value = course.code;
-                    document.getElementById('course-name').value = course.name;
-                    document.getElementById('course-duration').value = course.duration;
-                    document.getElementById('course-start-date').value = course.startDate || '';
-                    document.getElementById('course-rolling-intake').checked = course.rollingIntake || false;
-                    document.getElementById('course-description').value = course.description || '';
-                    
-                    // Show/hide start date based on rolling intake
-                    document.getElementById('course-start-date').disabled = course.rollingIntake;
-                } else {
-                    // Add mode
-                    title.textContent = 'Add New Course';
-                    form.reset();
-                    document.getElementById('course-id').value = '';
-                    document.getElementById('course-start-date').value = new Date().toISOString().split('T')[0];
-                    document.getElementById('course-rolling-intake').checked = false;
-                }
-                
-                // Add event listener for rolling intake checkbox
-                document.getElementById('course-rolling-intake').addEventListener('change', function() {
-                    document.getElementById('course-start-date').disabled = this.checked;
-                    if (this.checked) {
-                        document.getElementById('course-start-date').value = '';
-                    } else {
-                        document.getElementById('course-start-date').value = new Date().toISOString().split('T')[0];
-                    }
-                });
-                
-                courseModal.style.display = 'block';
-            } catch (e) {
-                console.error('Error showing course modal:', e);
-            }
-        }
-        
-        // Show unit modal (add/edit)
-        function showUnitModal(courseId, unitId = null) {
-            try {
-                const form = document.getElementById('unit-form');
-                const title = document.getElementById('unit-modal-title');
-                const taskFields = document.getElementById('task-fields');
-                
-                document.getElementById('unit-course-id').value = courseId;
-                
-                if (unitId) {
-                    // Edit mode
-                    const course = appData.courses?.find(c => c.id === courseId);
-                    if (!course) return;
-                    
-                    const unit = course.units?.find(u => u.id === unitId);
-                    if (!unit) return;
-                    
-                    title.textContent = `Edit Unit: ${unit.code} - ${unit.name}`;
-                    document.getElementById('unit-id').value = unit.id;
-                    document.getElementById('unit-code').value = unit.code;
-                    document.getElementById('unit-name').value = unit.name;
-                    document.getElementById('unit-description').value = unit.description || '';
-                    document.getElementById('unit-order').value = unit.order;
-                    
-                    // Populate task fields
-                    taskFields.innerHTML = '';
-                    unit.tasks?.forEach((task, index) => {
-                        const taskDiv = document.createElement('div');
-                        taskDiv.style.display = 'flex';
-                        taskDiv.style.gap = '10px';
-                        taskDiv.style.marginBottom = '5px';
-                        taskDiv.innerHTML = `
-                            <input type="text" value="${task.name}" placeholder="Task name" style="flex: 1;" data-task-id="${task.id}">
-                            <button type="button" class="btn btn-danger btn-sm remove-task-btn">×</button>
-                        `;
-                        taskFields.appendChild(taskDiv);
-                    });
-                } else {
-                    // Add mode
-                    title.textContent = 'Add New Unit';
-                    form.reset();
-                    document.getElementById('unit-id').value = '';
-                    document.getElementById('unit-order').value = (appData.courses?.find(c => c.id === courseId)?.units?.length || 0) + 1;
-                    
-                    // Add default empty task field
-                    taskFields.innerHTML = '';
-                    addTaskField();
-                }
-                
-                // Add event listener for add task button
-                document.getElementById('add-task-btn').addEventListener('click', addTaskField);
-                
-                // Add event listeners for remove task buttons
-                document.querySelectorAll('.remove-task-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        this.parentElement.remove();
-                    });
-                });
-                
-                unitModal.style.display = 'block';
-            } catch (e) {
-                console.error('Error showing unit modal:', e);
-            }
-        }
-        
-        function addTaskField() {
-            try {
-                const taskFields = document.getElementById('task-fields');
-                const taskDiv = document.createElement('div');
-                taskDiv.style.display = 'flex';
-                taskDiv.style.gap = '10px';
-                taskDiv.style.marginBottom = '5px';
-                taskDiv.innerHTML = `
-                    <input type="text" placeholder="Task name" style="flex: 1;">
-                    <button type="button" class="btn btn-danger btn-sm remove-task-btn">×</button>
-                `;
-                taskFields.appendChild(taskDiv);
-                
-                // Add event listener for the new remove button
-                taskDiv.querySelector('.remove-task-btn').addEventListener('click', function() {
-                    taskDiv.remove();
-                });
-            } catch (e) {
-                console.error('Error adding task field:', e);
-            }
-        }
-        
-        // Show course units
-        function showCourseUnits(courseId) {
-            try {
-                const course = appData.courses?.find(c => c.id === courseId);
-                if (!course) return;
-                
-                unitManagement.innerHTML = `
-                    <h3>${course.code} - ${course.name}</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Order</th>
-                                <th>Unit Code</th>
-                                <th>Unit Name</th>
-                                <th>Tasks</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="units-list">
-                            <!-- Units will be inserted here -->
-                        </tbody>
-                    </table>
-                    <button class="btn" id="add-unit-btn" data-course-id="${courseId}" style="margin-top: 15px;">Add Unit</button>
-                `;
-                
-                const unitsList = document.getElementById('units-list');
-                course.units?.sort((a, b) => a.order - b.order).forEach(unit => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${unit.order}</td>
-                        <td>${unit.code}</td>
-                        <td>${unit.name}</td>
-                        <td>${unit.tasks?.length || 0}</td>
-                        <td>
-                            <button class="btn" data-unit-id="${unit.id}" data-course-id="${courseId}" data-action="edit-unit">Edit</button>
-                            <button class="btn btn-danger" data-unit-id="${unit.id}" data-course-id="${courseId}" data-action="delete-unit">Delete</button>
-                        </td>
-                    `;
-                    unitsList.appendChild(row);
-                });
-                
-                // Add event listeners to unit buttons
-                document.querySelectorAll('[data-action="edit-unit"]').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const courseId = parseInt(btn.getAttribute('data-course-id'));
-                        const unitId = parseInt(btn.getAttribute('data-unit-id'));
-                        showUnitModal(courseId, unitId);
-                    });
-                });
-                
-                document.querySelectorAll('[data-action="delete-unit"]').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const courseId = parseInt(btn.getAttribute('data-course-id'));
-                        const unitId = parseInt(btn.getAttribute('data-unit-id'));
-                        deleteUnit(courseId, unitId);
-                    });
-                });
-                
-                document.getElementById('add-unit-btn').addEventListener('click', () => {
-                    showUnitModal(courseId);
-                });
-            } catch (e) {
-                console.error('Error showing course units:', e);
-            }
-        }
-        
-        // Delete student
-        function deleteStudent(studentId) {
-            if (confirm('Are you sure you want to delete this student? This will remove all their progress data.')) {
-                try {
-                    // Remove student from students array
-                    appData.students = appData.students?.filter(s => s.id !== studentId) || [];
-                    
-                    // Remove student from activity log
-                    appData.activityLog = appData.activityLog?.filter(activity => activity.studentId !== studentId) || [];
-                    
-                    saveData();
-                    renderStudents();
-                    renderDashboard();
-                    renderRecentActivity();
-                } catch (e) {
-                    console.error('Error deleting student:', e);
-                    alert('Error deleting student');
-                }
-            }
-        }
-        
-        // Delete course
-        function deleteCourse(courseId) {
-            if (confirm('Are you sure you want to delete this course? This will also remove all associated units, tasks, and student progress data.')) {
-                try {
-                    // Remove course from courses array
-                    appData.courses = appData.courses?.filter(c => c.id !== courseId) || [];
-                    
-                    // Remove course from students' enrolled courses
-                    appData.students?.forEach(student => {
-                        student.courses = student.courses?.filter(c => c.courseId !== courseId) || [];
-                        
-                        // Remove progress data for this course
-                        if (student.progress?.[courseId]) {
-                            delete student.progress[courseId];
-                        }
-                        
-                        // Remove task status data for this course
-                        if (student.taskStatus?.[courseId]) {
-                            delete student.taskStatus[courseId];
-                        }
-                    });
-                    
-                    saveData();
-                    renderCourses();
-                    renderStudents();
-                    renderDashboard();
-                } catch (e) {
-                    console.error('Error deleting course:', e);
-                    alert('Error deleting course');
-                }
-            }
-        }
-        
-        // Delete unit
-        function deleteUnit(courseId, unitId) {
-            if (confirm('Are you sure you want to delete this unit? This will affect student progress tracking.')) {
-                try {
-                    const course = appData.courses?.find(c => c.id === courseId);
-                    if (course) {
-                        // Remove unit from course
-                        course.units = course.units?.filter(u => u.id !== unitId) || [];
-                        
-                        // Update student progress to reflect removed unit
-                        appData.students?.forEach(student => {
-                            // Remove unit from student's enrolled units
-                            student.courses?.forEach(courseObj => {
-                                if (courseObj.courseId === courseId) {
-                                    courseObj.units = courseObj.units?.filter(u => u !== unitId) || [];
-                                }
-                            });
-                            
-                            if (student.courses?.some(c => c.courseId === courseId) && student.progress?.[courseId]) {
-                                // Remove unit progress
-                                if (student.progress[courseId].units?.[unitId]) {
-                                    delete student.progress[courseId].units[unitId];
-                                }
-                                
-                                // Remove task status data
-                                if (student.taskStatus?.[courseId]?.[unitId]) {
-                                    delete student.taskStatus[courseId][unitId];
-                                }
-                            }
-                        });
-                        
-                        saveData();
-                        showCourseUnits(courseId);
-                        renderStudents();
-                        renderDashboard();
-                    }
-                } catch (e) {
-                    console.error('Error deleting unit:', e);
-                    alert('Error deleting unit');
-                }
-            }
-        }
-        
-        // Report generation functions
-        function generateReport() {
-            try {
-                const reportType = document.getElementById('report-type').value;
-                const courseId = document.getElementById('report-course').value;
-                const startDate = document.getElementById('report-start-date').value;
-                const endDate = document.getElementById('report-end-date').value;
-                
-                let reportContent = '<h3>Report Results</h3>';
-                
-                // Filter activities by date range if provided
-                let filteredActivities = [...appData.activityLog];
-                if (startDate) {
-                    filteredActivities = filteredActivities.filter(a => a.date >= startDate);
-                }
-                if (endDate) {
-                    filteredActivities = filteredActivities.filter(a => a.date <= endDate);
-                }
-                
-                if (reportType === 'completion') {
-                    reportContent += generateCompletionReport(courseId);
-                } else if (reportType === 'progress') {
-                    reportContent += generateProgressReport(courseId);
-                } else if (reportType === 'attendance') {
-                    reportContent += generateAttendanceReport(filteredActivities, courseId);
-                } else if (reportType === 'task-completion') {
-                    reportContent += generateTaskCompletionReport(courseId);
-                } else if (reportType === 'custom') {
-                    reportContent += generateCustomReport();
-                }
-                
-                document.getElementById('report-results').innerHTML = reportContent;
-            } catch (e) {
-                console.error('Error generating report:', e);
-                document.getElementById('report-results').innerHTML = 
-                    '<div class="alert alert-danger">Error generating report: ' + e.message + '</div>';
-            }
-        }
-        
-        function generateCompletionReport(courseId) {
-            let content = '<h4>Course Completion Report</h4>';
-            
-            const filteredCourses = courseId === 'all' 
-                ? appData.courses 
-                : appData.courses.filter(c => c.id === parseInt(courseId));
-            
-            filteredCourses.forEach(course => {
-                const enrolledStudents = appData.students.filter(student => 
-                    student.courses.some(c => c.courseId === course.id)
-                );
-                
-                let completed = 0;
-                enrolledStudents.forEach(student => {
-                    const courseProgress = student.progress[course.id];
-                    if (courseProgress) {
-                        let allUnitsCompleted = true;
-                        for (const unitId in courseProgress.units) {
-                            const unitProgress = courseProgress.units[unitId];
-                            if (unitProgress.completedTasks < unitProgress.totalTasks) {
-                                allUnitsCompleted = false;
-                                break;
-                            }
-                        }
-                        if (allUnitsCompleted) completed++;
-                    }
-                });
-                
-                const completionRate = enrolledStudents.length > 0 
-                    ? Math.round((completed / enrolledStudents.length) * 100) 
-                    : 0;
-                
-                content += `
-                    <div class="card" style="margin-bottom: 15px;">
-                        <h5>${course.code} - ${course.name}</h5>
-                        <p>Enrolled: ${enrolledStudents.length} | Completed: ${completed} (${completionRate}%)</p>
-                        <div class="progress-bar">
-                            <div class="progress" style="width: ${completionRate}%"></div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            return content;
-        }
-        
-        function generateProgressReport(courseId) {
-            let content = '<h4>Student Progress Report</h4>';
-            
-            const filteredStudents = courseId === 'all'
-                ? appData.students
-                : appData.students.filter(student => student.courses.some(c => c.courseId === parseInt(courseId)));
-            
-            content += '<table><thead><tr><th>Student</th><th>Course</th><th>Progress</th><th>Status</th></tr></thead><tbody>';
-            
-            filteredStudents.forEach(student => {
-                const relevantCourses = courseId === 'all'
-                    ? student.courses.map(c => appData.courses.find(course => course.id === c.courseId)).filter(Boolean)
-                    : [appData.courses.find(c => c.id === parseInt(courseId))].filter(Boolean);
-                
-                relevantCourses.forEach(course => {
-                    const courseProgress = student.progress[course.id] || { units: {} };
-                    let totalTasksCompleted = 0;
-                    let totalTasks = 0;
-                    
-                    for (const unitId in courseProgress.units) {
-                        totalTasksCompleted += courseProgress.units[unitId].completedTasks || 0;
-                        totalTasks += courseProgress.units[unitId].totalTasks || 0;
-                    }
-                    
-                    const progressPercentage = totalTasks > 0 ? Math.round((totalTasksCompleted / totalTasks) * 100) : 0;
-                    const status = getStudentStatus(student, course.id);
-                    
-                    content += `
-                        <tr>
-                            <td>${student.firstName} ${student.lastName}</td>
-                            <td>${course.code}</td>
-                            <td>
-                                ${totalTasksCompleted} of ${totalTasks} (${progressPercentage}%)
-                                <div class="progress-bar">
-                                    <div class="progress" style="width: ${progressPercentage}%"></div>
-                                </div>
-                            </td>
-                            <td><span class="badge ${getStatusBadgeClass(status)}">${formatStatus(status)}</span></td>
-                        </tr>
-                    `;
-                });
-            });
-            
-            content += '</tbody></table>';
-            return content;
-        }
-        
-        function generateTaskCompletionReport(courseId) {
-            let content = '<h4>Task Completion Report</h4>';
-            
-            const filteredCourses = courseId === 'all' 
-                ? appData.courses 
-                : appData.courses.filter(c => c.id === parseInt(courseId));
-            
-            filteredCourses.forEach(course => {
-                content += `<h5>${course.code} - ${course.name}</h5>`;
-                
-                course.units.sort((a, b) => a.order - b.order).forEach(unit => {
-                    content += `<h6>${unit.code} - ${unit.name}</h6>`;
-                    content += '<table><thead><tr><th>Task</th><th>Completed</th><th>Not Started</th><th>Partially Completed</th><th>Failed</th></tr></thead><tbody>';
-                    
-                    unit.tasks.forEach(task => {
-                        let completed = 0;
-                        let notStarted = 0;
-                        let partial = 0;
-                        let failed = 0;
-                        
-                        appData.students.forEach(student => {
-                            const courseObj = student.courses.find(c => c.courseId === course.id);
-                            if (courseObj && courseObj.units.includes(unit.id)) {
-                                const status = student.taskStatus[course.id][unit.id][task.id] || 'not-started';
-                                
-                                switch(status) {
-                                    case 'completed': completed++; break;
-                                    case 'not-started': notStarted++; break;
-                                    case 'partial': partial++; break;
-                                    case 'failed': failed++; break;
-                                }
-                            }
-                        });
-                        
-                        const totalStudents = appData.students.filter(s => 
-                            s.courses.some(c => c.courseId === course.id && c.units.includes(unit.id))
-                        ).length;
-                        
-                        content += `
-                            <tr>
-                                <td>${task.name}</td>
-                                <td>${completed} (${totalStudents > 0 ? Math.round((completed / totalStudents) * 100) : 0}%)</td>
-                                <td>${notStarted} (${totalStudents > 0 ? Math.round((notStarted / totalStudents) * 100) : 0}%)</td>
-                                <td>${partial} (${totalStudents > 0 ? Math.round((partial / totalStudents) * 100) : 0}%)</td>
-                                <td>${failed} (${totalStudents > 0 ? Math.round((failed / totalStudents) * 100) : 0}%)</td>
-                            </tr>
-                        `;
-                    });
-                    
-                    content += '</tbody></table>';
-                });
-            });
-            
-            return content;
-        }
-        
-        function generateAttendanceReport(activities, courseId) {
-            let content = '<h4>Attendance Report</h4>';
-            
-            // Filter activities by course if specified
-            let filteredActivities = activities;
-            if (courseId !== 'all') {
-                filteredActivities = activities.filter(a => a.courseId === parseInt(courseId));
-            }
-            
-            if (filteredActivities.length === 0) {
-                content += '<p>No activities found for the selected criteria.</p>';
-                return content;
-            }
-            
-            content += '<table><thead><tr><th>Date</th><th>Student</th><th>Course</th><th>Activity</th><th>Status</th></tr></thead><tbody>';
-            
-            filteredActivities.forEach(activity => {
-                const student = appData.students.find(s => s.id === activity.studentId);
-                const course = appData.courses.find(c => c.id === activity.courseId);
-                
-                if (student && course) {
-                    content += `
-                        <tr>
-                            <td>${activity.date}</td>
-                            <td>${student.firstName} ${student.lastName}</td>
-                            <td>${course.code}</td>
-                            <td>${activity.activity}</td>
-                            <td><span class="badge ${getStatusBadgeClass(activity.status)}">${formatStatus(activity.status)}</span></td>
-                        </tr>
-                    `;
-                }
-            });
-            
-            content += '</tbody></table>';
-            return content;
-        }
-        
-        function generateCustomReport() {
-            return `
-                <h4>Custom Report</h4>
-                <p>Custom reports can be developed based on your specific needs.</p>
-                <p>Available data points:</p>
-                <ul>
-                    <li>Total students: ${appData.students.length}</li>
-                    <li>Total courses: ${appData.courses.length}</li>
-                    <li>Total activities logged: ${appData.activityLog.length}</li>
-                </ul>
-            `;
-        }
-        
+        // Student Status Overview Chart
+        function renderStatusChart() {
+            const ctx = document.getElementById('status-chart').getContext('2d');
+            
+            // Calculate student status counts
+            const studentStatuses = {
+                'on-track': 0,
+                'behind': 0,
+                'at-risk': 0,
+                'completed': 0
+            };
+            
+            appData.students?.forEach(student => {
+                let status = 'on-track';
+                let hasCompleted = false;
+                
+                for (const courseId in student.progress || {}) {
+                    const courseStatus = getStudentStatus(student, courseId);
+                    
+                    if (courseStatus === 'completed') {
+                        hasCompleted = true;
+                    } else if (courseStatus === 'at-risk' && status !== 'at-risk') {
+                        status = 'at-risk';
+                    } else if (courseStatus === 'behind' && status !== 'at-risk' && status !== 'behind') {
+                        status = 'behind';
+                    }
+                }
+                
+                if (hasCompleted && Object.keys(student.progress || {}).length > 0) {
+                    studentStatuses['completed']++;
+                } else {
+                    studentStatuses[status]++;
+                }
+            });
+            
+            // Destroy previous chart if it exists
+            if (statusChart) {
+                statusChart.destroy();
+            }
+            
+            statusChart = new Chart(ctx, {
+                type: 'polarArea',
+                data: {
+                    labels: Object.keys(studentStatuses).map(key => {
+                        return formatStatus(key);
+                    }),
+                    datasets: [{
+                        data: Object.values(studentStatuses),
+                        backgroundColor: [
+                            '#28a745', // completed - green
+                            '#4a6fa5', // on track - blue
+                            '#ffc107', // behind - yellow
+                            '#dc3545'  // at risk - red
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize the app
+        function initApp() {
+            backfillStartDates();
+            loadSettings();
+            renderDashboard();
+            renderStudents();
+            renderCourses();
+            renderRecentActivity();
+            setupEventListeners();
+            
+            // Initialize report filters
+            const reportCourseSelect = document.getElementById('report-course');
+            reportCourseSelect.innerHTML = '<option value="all">All Courses</option>';
+            appData.courses?.forEach(course => {
+                const option = document.createElement('option');
+                option.value = course.id;
+                option.textContent = `${course.code} - ${course.name}`;
+                reportCourseSelect.appendChild(option);
+            });
+            
+            // Set default date range (last 30 days)
+            const today = new Date();
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+            
+            document.getElementById('report-start-date').value = thirtyDaysAgo.toISOString().split('T')[0];
+            document.getElementById('report-end-date').value = today.toISOString().split('T')[0];
+            
+            // Set up the toggle charts button event listener
+            document.getElementById('toggle-charts-btn').addEventListener('click', toggleCharts);
+        }
+
+        // Render dashboard - FIXED VERSION
+        function renderDashboard() {
+            try {
+                document.getElementById('total-students').textContent = appData.students?.length || 0;
+                document.getElementById('total-courses').textContent = appData.courses?.length || 0;
+                
+                // Calculate completion rate
+                let completed = 0;
+                appData.students?.forEach(student => {
+                    let allCompleted = true;
+                    for (const courseId in student.progress || {}) {
+                        const courseProgress = student.progress[courseId];
+                        for (const unitId in courseProgress?.units || {}) {
+                            if (courseProgress.units[unitId].completedTasks < courseProgress.units[unitId].totalTasks) {
+                                allCompleted = false;
+                                break;
+                            }
+                        }
+                        if (!allCompleted) break;
+                    }
+                    if (allCompleted && Object.keys(student.progress || {}).length > 0) {
+                        completed++;
+                    }
+                });
+                
+                const completionRate = appData.students?.length > 0 ? Math.round((completed / appData.students.length) * 100) : 0;
+                document.getElementById('completion-rate').textContent = `${completionRate}%`;
+                
+                // Calculate at risk students
+                let atRisk = 0;
+                appData.students?.forEach(student => {
+                    for (const courseId in student.progress || {}) {
+                        const course = appData.courses?.find(c => c.id == courseId);
+                        if (course) {
+                            const courseProgress = student.progress[courseId];
+                            let totalTasksCompleted = 0;
+                            let totalTasks = 0;
+                            
+                            for (const unitId in courseProgress?.units || {}) {
+                                totalTasksCompleted += courseProgress.units[unitId]?.completedTasks || 0;
+                                totalTasks += courseProgress.units[unitId]?.totalTasks || 0;
+                            }
+                            
+                            const progressPercentage = totalTasks > 0 ? (totalTasksCompleted / totalTasks) * 100 : 0;
+                            const weeksElapsed = getWeeksElapsed(courseId, student, courseProgress?.lastActivity);
+                            const expectedProgress = (weeksElapsed / course.duration) * 100;
+                            
+                            if (progressPercentage < expectedProgress - 20) {
+                                atRisk++;
+                                break;
+                            }
+                        }
+                    }
+                });
+                
+                document.getElementById('at-risk').textContent = atRisk;
+                
+                // Update charts if they're visible
+                if (document.getElementById('charts-container').style.display === 'block') {
+                    renderCharts();
+                }
+            } catch (e) {
+                console.error('Error rendering dashboard:', e);
+            }
+        }
+
 // Setup event listeners
 function setupEventListeners() {
     try {
@@ -2892,585 +1448,584 @@ function setupEventListeners() {
                 document.getElementById(tab.dataset.tab).classList.add('active');
             });
         });
-                
-                // Student modal
-                document.getElementById('add-student-btn').addEventListener('click', () => showStudentModal());
-                document.getElementById('cancel-student-btn').addEventListener('click', () => {
-                    studentModal.style.display = 'none';
-                });
-                
-                // Student table actions
-                document.getElementById('students-table').addEventListener('click', e => {
-                    if (e.target.tagName === 'BUTTON') {
-                        const studentId = parseInt(e.target.getAttribute('data-student-id'));
-                        const action = e.target.getAttribute('data-action');
-                        
-                        if (action === 'edit') {
-                            showStudentModal(studentId);
-                        } else if (action === 'delete') {
-                            deleteStudent(studentId);
-                        } else if (action === 'view') {
-                            showStudentDetails(studentId);
-                        }
-                    }
-                });
-                
-                document.getElementById('student-form').addEventListener('submit', e => {
-                    e.preventDefault();
-                    
-                    try {
-                        const studentId = document.getElementById('student-id').value;
-                        const firstName = document.getElementById('student-first-name').value.trim();
-                        const lastName = document.getElementById('student-last-name').value.trim();
-                        const email = document.getElementById('student-email').value.trim();
-                        const phone = document.getElementById('student-phone').value.trim();
-                        
-                        if (!firstName || !lastName) {
-                            alert('First name and last name are required');
-                            return;
-                        }
-                        
-                        // Get selected courses
-                        const coursesSelect = document.getElementById('student-courses');
-                        const selectedCourses = Array.from(coursesSelect.selectedOptions).map(option => parseInt(option.value));
-                        
-                        // Get selected units for each course
-                        const selectedUnitsByCourse = {};
-                        document.querySelectorAll('.unit-checkbox:checked').forEach(checkbox => {
-                            const courseId = parseInt(checkbox.getAttribute('data-course-id'));
-                            const unitId = parseInt(checkbox.getAttribute('data-unit-id'));
-                            
-                            if (!selectedUnitsByCourse[courseId]) {
-                                selectedUnitsByCourse[courseId] = [];
-                            }
-                            selectedUnitsByCourse[courseId].push(unitId);
-                        });
-                        
-                        // Get start dates for rolling intake courses
-                        const startDatesByCourse = {};
-                        document.querySelectorAll('[id^="student-course-"]').forEach(input => {
-                            if (input.id.endsWith('-start-date')) {
-                                const courseId = parseInt(input.id.split('-')[2]);
-                                startDatesByCourse[courseId] = input.value;
-                            }
-                        });
-                        
-                        if (studentId) {
-                            // Update existing student
-                            const student = appData.students?.find(s => s.id === parseInt(studentId));
-                            if (!student) return;
-                            
-                            student.firstName = firstName;
-                            student.lastName = lastName;
-                            student.email = email;
-                            student.phone = phone;
-                            
-                            // Update student's courses, units, and start dates
-                            student.courses = selectedCourses.map(courseId => {
-                                const course = appData.courses?.find(c => c.id === courseId);
-                                const courseObj = {
-                                    courseId,
-                                    units: selectedUnitsByCourse[courseId] || []
-                                };
-                                
-                                // Add start date if this is a rolling intake course
-                                if (course?.rollingIntake) {
-                                    courseObj.startDate = startDatesByCourse[courseId] || new Date().toISOString().split('T')[0];
-                                }
-                                
-                                return courseObj;
-                            });
-                            
-                            // Initialize progress for new courses/units
-                            selectedCourses.forEach(courseId => {
-                                const course = appData.courses?.find(c => c.id === courseId);
-                                if (course) {
-                                    // Initialize progress for the course
-                                    if (!student.progress) student.progress = {};
-                                    if (!student.progress[courseId]) {
-                                        student.progress[courseId] = { units: {}, lastActivity: null };
-                                    }
-                                    
-                                    // Initialize unit progress for selected units
-                                    const selectedUnits = selectedUnitsByCourse[courseId] || [];
-                                    selectedUnits.forEach(unitId => {
-                                        const unit = course.units?.find(u => u.id === unitId);
-                                        if (unit && !student.progress[courseId].units?.[unitId]) {
-                                            student.progress[courseId].units[unitId] = {
-                                                completedTasks: 0,
-                                                totalTasks: unit.tasks?.length || 0
-                                            };
-                                        }
-                                    });
-                                    
-                                    // Initialize task status for selected units
-                                    if (!student.taskStatus) student.taskStatus = {};
-                                    if (!student.taskStatus[courseId]) {
-                                        student.taskStatus[courseId] = {};
-                                    }
-                                    
-                                    selectedUnits.forEach(unitId => {
-                                        const unit = course.units?.find(u => u.id === unitId);
-                                        if (unit && !student.taskStatus[courseId][unitId]) {
-                                            student.taskStatus[courseId][unitId] = {};
-                                            
-                                            unit.tasks?.forEach(task => {
-                                                student.taskStatus[courseId][unitId][task.id] = 'not-started';
-                                            });
-                                        }
-                                    });
-                                }
-                            });
-                            
-                            // Remove progress for unselected courses
-                            Object.keys(student.progress || {}).forEach(courseId => {
-                                if (!selectedCourses.includes(parseInt(courseId))) {
-                                    delete student.progress[courseId];
-                                    if (student.taskStatus) {
-                                        delete student.taskStatus[courseId];
-                                    }
-                                } else {
-                                    // Remove progress for unselected units in selected courses
-                                    const selectedUnits = selectedUnitsByCourse[courseId] || [];
-                                    Object.keys(student.progress[courseId].units || {}).forEach(unitId => {
-                                        if (!selectedUnits.includes(parseInt(unitId))) {
-                                            delete student.progress[courseId].units[unitId];
-                                            if (student.taskStatus?.[courseId]) {
-                                                delete student.taskStatus[courseId][unitId];
-                                            }
-                                        }
-                                    });
-                                }
-                            });
-                            
-                            // Log activity
-                            if (!appData.activityLog) appData.activityLog = [];
-                            appData.activityLog.unshift({
-                                date: new Date().toISOString().split('T')[0],
-                                studentId: student.id,
-                                courseId: null,
-                                activity: 'Student information updated',
-                                status: 'info'
-                            });
-                        } else {
-                            // Add new student
-                            const newId = appData.students?.length > 0 ? Math.max(...appData.students.map(s => s.id)) + 1 : 1;
-                            const newStudent = {
-                                id: newId,
-                                firstName,
-                                lastName,
-                                email,
-                                phone,
-                                courses: selectedCourses.map(courseId => {
-                                    const course = appData.courses?.find(c => c.id === courseId);
-                                    const courseObj = {
-                                        courseId,
-                                        units: selectedUnitsByCourse[courseId] || []
-                                    };
-                                    
-                                    // Add start date if this is a rolling intake course
-                                    if (course?.rollingIntake) {
-                                        courseObj.startDate = startDatesByCourse[courseId] || new Date().toISOString().split('T')[0];
-                                    }
-                                    
-                                    return courseObj;
-                                }),
-                                progress: {},
-                                taskStatus: {}
-                            };
-                            
-                            // Initialize progress for each course and selected units
-                            selectedCourses.forEach(courseId => {
-                                const course = appData.courses?.find(c => c.id === courseId);
-                                if (course) {
-                                    newStudent.progress[courseId] = { units: {}, lastActivity: null };
-                                    newStudent.taskStatus[courseId] = {};
-                                    
-                                    // Initialize unit progress for selected units
-                                    const selectedUnits = selectedUnitsByCourse[courseId] || [];
-                                    selectedUnits.forEach(unitId => {
-                                        const unit = course.units?.find(u => u.id === unitId);
-                                        if (unit) {
-                                            newStudent.progress[courseId].units[unitId] = {
-                                                completedTasks: 0,
-                                                totalTasks: unit.tasks?.length || 0
-                                            };
-                                            
-                                            // Initialize task status
-                                            newStudent.taskStatus[courseId][unitId] = {};
-                                            unit.tasks?.forEach(task => {
-                                                newStudent.taskStatus[courseId][unitId][task.id] = 'not-started';
-                                            });
-                                        }
-                                    });
-                                }
-                            });
-                            
-                            if (!appData.students) appData.students = [];
-                            appData.students.push(newStudent);
-                            
-                            // Log activity
-                            if (!appData.activityLog) appData.activityLog = [];
-                            appData.activityLog.unshift({
-                                date: new Date().toISOString().split('T')[0],
-                                studentId: newStudent.id,
-                                courseId: null,
-                                activity: 'Student added to system',
-                                status: 'info'
-                            });
-                        }
-                        
-                        saveData();
-                        studentModal.style.display = 'none';
-                        renderStudents();
-                        renderDashboard();
-                        renderRecentActivity();
-                    } catch (e) {
-                        console.error('Error saving student:', e);
-                        alert('Error saving student');
-                    }
-                });
-                
-                // Course modal
-                document.getElementById('add-course-btn').addEventListener('click', () => showCourseModal());
-                document.getElementById('cancel-course-btn').addEventListener('click', () => {
-                    courseModal.style.display = 'none';
-                });
-                
-                // Course table actions
-                coursesTable.addEventListener('click', e => {
-                    if (e.target.tagName === 'BUTTON') {
-                        const courseId = parseInt(e.target.getAttribute('data-course-id'));
-                        const action = e.target.getAttribute('data-action');
-                        
-                        if (action === 'edit') {
-                            showCourseModal(courseId);
-                        } else if (action === 'delete') {
-                            deleteCourse(courseId);
-                        } else if (action === 'units') {
-                            showCourseUnits(courseId);
-                        }
-                    }
-                });
-                
-                document.getElementById('course-form').addEventListener('submit', e => {
-                    e.preventDefault();
-                    
-                    try {
-                        const courseId = document.getElementById('course-id').value;
-                        const code = document.getElementById('course-code').value.trim();
-                        const name = document.getElementById('course-name').value.trim();
-                        const duration = parseInt(document.getElementById('course-duration').value);
-                        const startDate = document.getElementById('course-start-date').value;
-                        const rollingIntake = document.getElementById('course-rolling-intake').checked;
-                        const description = document.getElementById('course-description').value.trim();
-                        
-                        if (!code || !name || isNaN(duration)) {
-                            alert('Course code, name, and duration are required');
-                            return;
-                        }
-                        
-                        if (courseId) {
-                            // Update existing course
-                            const course = appData.courses?.find(c => c.id === parseInt(courseId));
-                            if (course) {
-                                course.code = code;
-                                course.name = name;
-                                course.duration = duration;
-                                course.startDate = rollingIntake ? null : startDate;
-                                course.rollingIntake = rollingIntake;
-                                course.description = description;
-                            }
-                        } else {
-                            // Add new course
-                            const newCourse = {
-                                id: appData.courses?.length > 0 ? Math.max(...appData.courses.map(c => c.id)) + 1 : 1,
-                                code,
-                                name,
-                                duration,
-                                startDate: rollingIntake ? null : startDate,
-                                rollingIntake,
-                                description,
-                                units: []
-                            };
-                            
-                            if (!appData.courses) appData.courses = [];
-                            appData.courses.push(newCourse);
-                        }
-                        
-                        saveData();
-                        courseModal.style.display = 'none';
-                        renderCourses();
-                        renderStudents();
-                        renderDashboard();
-                    } catch (e) {
-                        console.error('Error saving course:', e);
-                        alert('Error saving course');
-                    }
-                });
-                
-                // Unit modal
-                document.getElementById('cancel-unit-btn').addEventListener('click', () => {
-                    unitModal.style.display = 'none';
-                });
-                
-                document.getElementById('unit-form').addEventListener('submit', e => {
-                    e.preventDefault();
-                    
-                    try {
-                        const unitId = document.getElementById('unit-id').value;
-                        const courseId = parseInt(document.getElementById('unit-course-id').value);
-                        const code = document.getElementById('unit-code').value.trim();
-                        const name = document.getElementById('unit-name').value.trim();
-                        const description = document.getElementById('unit-description').value.trim();
-                        const order = parseInt(document.getElementById('unit-order').value);
-                        
-                        if (!code || !name || isNaN(order)) {
-                            alert('Unit code, name, and order are required');
-                            return;
-                        }
-                        
-                        // Get tasks from form
-                        const taskInputs = document.querySelectorAll('#task-fields input');
-                        const tasks = Array.from(taskInputs).map((input, index) => ({
-                            id: index + 1,
-                            name: input.value.trim()
-                        })).filter(task => task.name); // Remove empty tasks
-                        
-                        const course = appData.courses?.find(c => c.id === courseId);
-                        if (!course) return;
-                        
-                        if (unitId) {
-                            // Update existing unit
-                            const unit = course.units?.find(u => u.id === parseInt(unitId));
-                            if (unit) {
-                                unit.code = code;
-                                unit.name = name;
-                                unit.description = description;
-                                unit.order = order;
-                                unit.tasks = tasks;
-                                
-                                // Update student progress to reflect task changes
-                                appData.students?.forEach(student => {
-                                    if (student.courses?.some(c => c.courseId === courseId) && student.progress?.[courseId]) {
-                                        // Update unit progress
-                                        if (student.progress[courseId].units?.[unit.id]) {
-                                            student.progress[courseId].units[unit.id].totalTasks = tasks.length;
-                                            
-                                            // If student had completed more tasks than now exist, adjust completed count
-                                            if (student.progress[courseId].units[unit.id].completedTasks > tasks.length) {
-                                                student.progress[courseId].units[unit.id].completedTasks = tasks.length;
-                                            }
-                                        }
-                                        
-                                        // Update task status
-                                        if (student.taskStatus?.[courseId]?.[unit.id]) {
-                                            // Keep only statuses for tasks that still exist
-                                            const newTaskStatus = {};
-                                            tasks.forEach((task, index) => {
-                                                const oldTaskId = parseInt(taskInputs[index].getAttribute('data-task-id')) || task.id;
-                                                newTaskStatus[task.id] = student.taskStatus[courseId][unit.id][oldTaskId] || 'not-started';
-                                            });
-                                            student.taskStatus[courseId][unit.id] = newTaskStatus;
-                                        }
-                                    }
-                                });
-                            }
-                        } else {
-                            // Add new unit
-                            const newUnit = {
-                                id: course.units?.length > 0 ? Math.max(...course.units.map(u => u.id)) + 1 : 1,
-                                code,
-                                name,
-                                description,
-                                order,
-                                tasks
-                            };
-                            
-                            if (!course.units) course.units = [];
-                            course.units.push(newUnit);
-                            
-                            // Update student progress for students enrolled in this course and unit
-                            appData.students?.forEach(student => {
-                                const courseObj = student.courses?.find(c => c.courseId === courseId);
-                                if (courseObj && courseObj.units?.includes(newUnit.id)) {
-                                    // Initialize progress for this unit
-                                    if (!student.progress) student.progress = {};
-                                    if (!student.progress[courseId]) {
-                                        student.progress[courseId] = { units: {}, lastActivity: null };
-                                    }
-                                    
-                                    student.progress[courseId].units[newUnit.id] = {
-                                        completedTasks: 0,
-                                        totalTasks: tasks.length
-                                    };
-                                    
-                                    // Initialize task status for this unit
-                                    if (!student.taskStatus) student.taskStatus = {};
-                                    if (!student.taskStatus[courseId]) {
-                                        student.taskStatus[courseId] = {};
-                                    }
-                                    
-                                    student.taskStatus[courseId][newUnit.id] = {};
-                                    tasks.forEach(task => {
-                                        student.taskStatus[courseId][newUnit.id][task.id] = 'not-started';
-                                    });
-                                }
-                            });
-                        }
-                        
-                        saveData();
-                        unitModal.style.display = 'none';
-                        showCourseUnits(courseId);
-                        renderStudents();
-                        renderDashboard();
-                    } catch (e) {
-                        console.error('Error saving unit:', e);
-                        alert('Error saving unit');
-                    }
-                });
-                
-                // Student detail modal
-                document.getElementById('close-student-detail-btn').addEventListener('click', () => {
-                    studentDetailModal.style.display = 'none';
-                });
-                
-                // Search and filter
-                document.getElementById('student-search').addEventListener('input', e => {
-                    renderStudents(e.target.value);
-                });
-                
-                document.getElementById('course-filter').addEventListener('change', () => {
-                    renderStudents(document.getElementById('student-search').value);
-                });
-                
-                document.getElementById('status-filter').addEventListener('change', () => {
-                    renderStudents(document.getElementById('student-search').value);
-                });
-                
-                // Settings
-                colorThemeSelect.addEventListener('change', function() {
-                    if (this.value === 'custom') {
-                        customColorsSection.style.display = 'block';
-                    } else {
-                        customColorsSection.style.display = 'none';
-                        appData.settings.theme = this.value;
-                        applyTheme();
-                    }
-                });
-                
-                document.getElementById('custom-primary').addEventListener('input', function() {
-                    if (!appData.settings.colors) appData.settings.colors = {};
-                    appData.settings.colors.primary = this.value;
-                    applyTheme();
-                });
-                
-                document.getElementById('custom-secondary').addEventListener('input', function() {
-                    if (!appData.settings.colors) appData.settings.colors = {};
-                    appData.settings.colors.secondary = this.value;
-                    applyTheme();
-                });
-                
-                document.getElementById('custom-accent').addEventListener('input', function() {
-                    if (!appData.settings.colors) appData.settings.colors = {};
-                    appData.settings.colors.accent = this.value;
-                    applyTheme();
-                });
-                
-                document.getElementById('save-settings-btn').addEventListener('click', function() {
-                    try {
-                        appData.settings.institutionName = document.getElementById('institution-name').value;
-                        appData.settings.theme = document.getElementById('color-theme').value;
-                        
-                        if (appData.settings.theme === 'custom') {
-                            appData.settings.colors = {
-                                primary: document.getElementById('custom-primary').value,
-                                secondary: document.getElementById('custom-secondary').value,
-                                accent: document.getElementById('custom-accent').value
-                            };
-                        }
-                        
-                        saveData();
-                        alert('Settings saved successfully!');
-                    } catch (e) {
-                        console.error('Error saving settings:', e);
-                        alert('Error saving settings');
-                    }
-                });
-                
-                // Data export/import
-                document.getElementById('export-data-btn').addEventListener('click', function() {
-                    try {
-                        const dataStr = JSON.stringify(appData, null, 2);
-                        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-                        
-                        const exportFileDefaultName = `vocational-progress-tracker-${new Date().toISOString().split('T')[0]}.json`;
-                        
-                        const linkElement = document.createElement('a');
-                        linkElement.setAttribute('href', dataUri);
-                        linkElement.setAttribute('download', exportFileDefaultName);
-                        linkElement.click();
-                    } catch (e) {
-                        console.error('Error exporting data:', e);
-                        alert('Error exporting data');
-                    }
-                });
-                
-                document.getElementById('import-data-btn').addEventListener('click', function() {
-                    document.getElementById('import-file').click();
-                });
-                
-                document.getElementById('import-file').addEventListener('change', function(e) {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    
-                    if (confirm('Importing data will overwrite all current data. Are you sure you want to continue?')) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            try {
-                                const importedData = JSON.parse(e.target.result);
-                                if (importedData && 
-                                    typeof importedData === 'object' && 
-                                    importedData.settings && 
-                                    importedData.students && 
-                                    importedData.courses && 
-                                    importedData.activityLog) {
-                                    appData = importedData;
-                                    saveData();
-                                    loadSettings();
-                                    renderDashboard();
-                                    renderStudents();
-                                    renderCourses();
-                                    renderRecentActivity();
-                                    alert('Data imported successfully!');
-                                } else {
-                                    alert('Invalid data format. Import failed.');
-                                }
-                            } catch (error) {
-                                console.error('Error importing data:', error);
-                                alert('Error importing data: ' + error.message);
-                            }
-                        };
-                        reader.onerror = function() {
-                            alert('Error reading file');
-                        };
-                        reader.readAsText(file);
-                    }
-                    
-                    // Reset file input
-                    e.target.value = '';
-                });
-                
-                // Generate report
-                document.getElementById('generate-report-btn').addEventListener('click', generateReport);
-            } catch (e) {
-                console.error('Error setting up event listeners:', e);
-            }
-        }
-        
+        
+        // Student modal
+        document.getElementById('add-student-btn').addEventListener('click', () => showStudentModal());
+        document.getElementById('cancel-student-btn').addEventListener('click', () => {
+            studentModal.style.display = 'none';
+        });
+        
+        // Student table actions
+        document.getElementById('students-table').addEventListener('click', e => {
+            if (e.target.tagName === 'BUTTON') {
+                const studentId = parseInt(e.target.getAttribute('data-student-id'));
+                const action = e.target.getAttribute('data-action');
+                
+                if (action === 'edit') {
+                    showStudentModal(studentId);
+                } else if (action === 'delete') {
+                    deleteStudent(studentId);
+                } else if (action === 'view') {
+                    showStudentDetails(studentId);
+                }
+            }
+        });
+        
+        document.getElementById('student-form').addEventListener('submit', e => {
+            e.preventDefault();
+            
+            try {
+                const studentId = document.getElementById('student-id').value;
+                const firstName = document.getElementById('student-first-name').value.trim();
+                const lastName = document.getElementById('student-last-name').value.trim();
+                const email = document.getElementById('student-email').value.trim();
+                const phone = document.getElementById('student-phone').value.trim();
+                
+                if (!firstName || !lastName) {
+                    alert('First name and last name are required');
+                    return;
+                }
+                
+                // Get selected courses
+                const coursesSelect = document.getElementById('student-courses');
+                const selectedCourses = Array.from(coursesSelect.selectedOptions).map(option => parseInt(option.value));
+                
+                // Get selected units for each course
+                const selectedUnitsByCourse = {};
+                document.querySelectorAll('.unit-checkbox:checked').forEach(checkbox => {
+                    const courseId = parseInt(checkbox.getAttribute('data-course-id'));
+                    const unitId = parseInt(checkbox.getAttribute('data-unit-id'));
+                    
+                    if (!selectedUnitsByCourse[courseId]) {
+                        selectedUnitsByCourse[courseId] = [];
+                    }
+                    selectedUnitsByCourse[courseId].push(unitId);
+                });
+                
+                // Get start dates for rolling intake courses
+                const startDatesByCourse = {};
+                document.querySelectorAll('[id^="student-course-"]').forEach(input => {
+                    if (input.id.endsWith('-start-date')) {
+                        const courseId = parseInt(input.id.split('-')[2]);
+                        startDatesByCourse[courseId] = input.value;
+                    }
+                });
+                
+                if (studentId) {
+                    // Update existing student
+                    const student = appData.students?.find(s => s.id === parseInt(studentId));
+                    if (!student) return;
+                    
+                    student.firstName = firstName;
+                    student.lastName = lastName;
+                    student.email = email;
+                    student.phone = phone;
+                    
+                    // Update student's courses, units, and start dates
+                    student.courses = selectedCourses.map(courseId => {
+                        const course = appData.courses?.find(c => c.id === courseId);
+                        const courseObj = {
+                            courseId,
+                            units: selectedUnitsByCourse[courseId] || []
+                        };
+                        
+                        // Add start date if this is a rolling intake course
+                        if (course?.rollingIntake) {
+                            courseObj.startDate = startDatesByCourse[courseId] || new Date().toISOString().split('T')[0];
+                        }
+                        
+                        return courseObj;
+                    });
+                    
+                    // Initialize progress for new courses/units
+                    selectedCourses.forEach(courseId => {
+                        const course = appData.courses?.find(c => c.id === courseId);
+                        if (course) {
+                            // Initialize progress for the course
+                            if (!student.progress) student.progress = {};
+                            if (!student.progress[courseId]) {
+                                student.progress[courseId] = { units: {}, lastActivity: null };
+                            }
+                            
+                            // Initialize unit progress for selected units
+                            const selectedUnits = selectedUnitsByCourse[courseId] || [];
+                            selectedUnits.forEach(unitId => {
+                                const unit = course.units?.find(u => u.id === unitId);
+                                if (unit && !student.progress[courseId].units?.[unitId]) {
+                                    student.progress[courseId].units[unitId] = {
+                                        completedTasks: 0,
+                                        totalTasks: unit.tasks?.length || 0
+                                    };
+                                }
+                            });
+                            
+                            // Initialize task status for selected units
+                            if (!student.taskStatus) student.taskStatus = {};
+                            if (!student.taskStatus[courseId]) {
+                                student.taskStatus[courseId] = {};
+                            }
+                            
+                            selectedUnits.forEach(unitId => {
+                                const unit = course.units?.find(u => u.id === unitId);
+                                if (unit && !student.taskStatus[courseId][unitId]) {
+                                    student.taskStatus[courseId][unitId] = {};
+                                    
+                                    unit.tasks?.forEach(task => {
+                                        student.taskStatus[courseId][unitId][task.id] = 'not-started';
+                                    });
+                                }
+                            });
+                        }
+                    });
+                    
+                    // Remove progress for unselected courses
+                    Object.keys(student.progress || {}).forEach(courseId => {
+                        if (!selectedCourses.includes(parseInt(courseId))) {
+                            delete student.progress[courseId];
+                            if (student.taskStatus) {
+                                delete student.taskStatus[courseId];
+                            }
+                        } else {
+                            // Remove progress for unselected units in selected courses
+                            const selectedUnits = selectedUnitsByCourse[courseId] || [];
+                            Object.keys(student.progress[courseId].units || {}).forEach(unitId => {
+                                if (!selectedUnits.includes(parseInt(unitId))) {
+                                    delete student.progress[courseId].units[unitId];
+                                    if (student.taskStatus?.[courseId]) {
+                                        delete student.taskStatus[courseId][unitId];
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    
+                    // Log activity
+                    if (!appData.activityLog) appData.activityLog = [];
+                    appData.activityLog.unshift({
+                        date: new Date().toISOString().split('T')[0],
+                        studentId: student.id,
+                        courseId: null,
+                        activity: 'Student information updated',
+                        status: 'info'
+                    });
+                } else {
+                    // Add new student
+                    const newId = appData.students?.length > 0 ? Math.max(...appData.students.map(s => s.id)) + 1 : 1;
+                    const newStudent = {
+                        id: newId,
+                        firstName,
+                        lastName,
+                        email,
+                        phone,
+                        courses: selectedCourses.map(courseId => {
+                            const course = appData.courses?.find(c => c.id === courseId);
+                            const courseObj = {
+                                courseId,
+                                units: selectedUnitsByCourse[courseId] || []
+                            };
+                            
+                            // Add start date if this is a rolling intake course
+                            if (course?.rollingIntake) {
+                                courseObj.startDate = startDatesByCourse[courseId] || new Date().toISOString().split('T')[0];
+                            }
+                            
+                            return courseObj;
+                        }),
+                        progress: {},
+                        taskStatus: {}
+                    };
+                    
+                    // Initialize progress for each course and selected units
+                    selectedCourses.forEach(courseId => {
+                        const course = appData.courses?.find(c => c.id === courseId);
+                        if (course) {
+                            newStudent.progress[courseId] = { units: {}, lastActivity: null };
+                            newStudent.taskStatus[courseId] = {};
+                            
+                            // Initialize unit progress for selected units
+                            const selectedUnits = selectedUnitsByCourse[courseId] || [];
+                            selectedUnits.forEach(unitId => {
+                                const unit = course.units?.find(u => u.id === unitId);
+                                if (unit) {
+                                    newStudent.progress[courseId].units[unitId] = {
+                                        completedTasks: 0,
+                                        totalTasks: unit.tasks?.length || 0
+                                    };
+                                    
+                                    // Initialize task status
+                                    newStudent.taskStatus[courseId][unitId] = {};
+                                    unit.tasks?.forEach(task => {
+                                        newStudent.taskStatus[courseId][unitId][task.id] = 'not-started';
+                                    });
+                                }
+                            });
+                        }
+                    });
+                    
+                    if (!appData.students) appData.students = [];
+                    appData.students.push(newStudent);
+                    
+                    // Log activity
+                    if (!appData.activityLog) appData.activityLog = [];
+                    appData.activityLog.unshift({
+                        date: new Date().toISOString().split('T')[0],
+                        studentId: newStudent.id,
+                        courseId: null,
+                        activity: 'Student added to system',
+                        status: 'info'
+                    });
+                }
+                
+                saveData();
+                studentModal.style.display = 'none';
+                renderStudents();
+                renderDashboard();
+                renderRecentActivity();
+            } catch (e) {
+                console.error('Error saving student:', e);
+                alert('Error saving student');
+            }
+        });
+        
+        // Course modal
+        document.getElementById('add-course-btn').addEventListener('click', () => showCourseModal());
+        document.getElementById('cancel-course-btn').addEventListener('click', () => {
+            courseModal.style.display = 'none';
+        });
+        
+        // Course table actions
+        coursesTable.addEventListener('click', e => {
+            if (e.target.tagName === 'BUTTON') {
+                const courseId = parseInt(e.target.getAttribute('data-course-id'));
+                const action = e.target.getAttribute('data-action');
+                
+                if (action === 'edit') {
+                    showCourseModal(courseId);
+                } else if (action === 'delete') {
+                    deleteCourse(courseId);
+                } else if (action === 'units') {
+                    showCourseUnits(courseId);
+                }
+            }
+        });
+        
+        document.getElementById('course-form').addEventListener('submit', e => {
+            e.preventDefault();
+            
+            try {
+                const courseId = document.getElementById('course-id').value;
+                const code = document.getElementById('course-code').value.trim();
+                const name = document.getElementById('course-name').value.trim();
+                const duration = parseInt(document.getElementById('course-duration').value);
+                const startDate = document.getElementById('course-start-date').value;
+                const rollingIntake = document.getElementById('course-rolling-intake').checked;
+                const description = document.getElementById('course-description').value.trim();
+                
+                if (!code || !name || isNaN(duration)) {
+                    alert('Course code, name, and duration are required');
+                    return;
+                }
+                
+                if (courseId) {
+                    // Update existing course
+                    const course = appData.courses?.find(c => c.id === parseInt(courseId));
+                    if (course) {
+                        course.code = code;
+                        course.name = name;
+                        course.duration = duration;
+                        course.startDate = rollingIntake ? null : startDate;
+                        course.rollingIntake = rollingIntake;
+                        course.description = description;
+                    }
+                } else {
+                    // Add new course
+                    const newCourse = {
+                        id: appData.courses?.length > 0 ? Math.max(...appData.courses.map(c => c.id)) + 1 : 1,
+                        code,
+                        name,
+                        duration,
+                        startDate: rollingIntake ? null : startDate,
+                        rollingIntake,
+                        description,
+                        units: []
+                    };
+                    
+                    if (!appData.courses) appData.courses = [];
+                    appData.courses.push(newCourse);
+                }
+                
+                saveData();
+                courseModal.style.display = 'none';
+                renderCourses();
+                renderStudents();
+                renderDashboard();
+            } catch (e) {
+                console.error('Error saving course:', e);
+                alert('Error saving course');
+            }
+        });
+        
+        // Unit modal
+        document.getElementById('cancel-unit-btn').addEventListener('click', () => {
+            unitModal.style.display = 'none';
+        });
+        
+        document.getElementById('unit-form').addEventListener('submit', e => {
+            e.preventDefault();
+            
+            try {
+                const unitId = document.getElementById('unit-id').value;
+                const courseId = parseInt(document.getElementById('unit-course-id').value);
+                const code = document.getElementById('unit-code').value.trim();
+                const name = document.getElementById('unit-name').value.trim();
+                const description = document.getElementById('unit-description').value.trim();
+                const order = parseInt(document.getElementById('unit-order').value);
+                
+                if (!code || !name || isNaN(order)) {
+                    alert('Unit code, name, and order are required');
+                    return;
+                }
+                
+                // Get tasks from form
+                const taskInputs = document.querySelectorAll('#task-fields input');
+                const tasks = Array.from(taskInputs).map((input, index) => ({
+                    id: index + 1,
+                    name: input.value.trim()
+                })).filter(task => task.name); // Remove empty tasks
+                
+                const course = appData.courses?.find(c => c.id === courseId);
+                if (!course) return;
+                
+                if (unitId) {
+                    // Update existing unit
+                    const unit = course.units?.find(u => u.id === parseInt(unitId));
+                    if (unit) {
+                        unit.code = code;
+                        unit.name = name;
+                        unit.description = description;
+                        unit.order = order;
+                        unit.tasks = tasks;
+                        
+                        // Update student progress to reflect task changes
+                        appData.students?.forEach(student => {
+                            if (student.courses?.some(c => c.courseId === courseId) && student.progress?.[courseId]) {
+                                // Update unit progress
+                                if (student.progress[courseId].units?.[unit.id]) {
+                                    student.progress[courseId].units[unit.id].totalTasks = tasks.length;
+                                    
+                                    // If student had completed more tasks than now exist, adjust completed count
+                                    if (student.progress[courseId].units[unit.id].completedTasks > tasks.length) {
+                                        student.progress[courseId].units[unit.id].completedTasks = tasks.length;
+                                    }
+                                }
+                                
+                                // Update task status
+                                if (student.taskStatus?.[courseId]?.[unit.id]) {
+                                    // Keep only statuses for tasks that still exist
+                                    const newTaskStatus = {};
+                                    tasks.forEach((task, index) => {
+                                        const oldTaskId = parseInt(taskInputs[index].getAttribute('data-task-id')) || task.id;
+                                        newTaskStatus[task.id] = student.taskStatus[courseId][unit.id][oldTaskId] || 'not-started';
+                                    });
+                                    student.taskStatus[courseId][unit.id] = newTaskStatus;
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    // Add new unit
+                    const newUnit = {
+                        id: course.units?.length > 0 ? Math.max(...course.units.map(u => u.id)) + 1 : 1,
+                        code,
+                        name,
+                        description,
+                        order,
+                        tasks
+                    };
+                    
+                    if (!course.units) course.units = [];
+                    course.units.push(newUnit);
+                    
+                    // Update student progress for students enrolled in this course and unit
+                    appData.students?.forEach(student => {
+                        const courseObj = student.courses?.find(c => c.courseId === courseId);
+                        if (courseObj && courseObj.units?.includes(newUnit.id)) {
+                            // Initialize progress for this unit
+                            if (!student.progress) student.progress = {};
+                            if (!student.progress[courseId]) {
+                                student.progress[courseId] = { units: {}, lastActivity: null };
+                            }
+                            
+                            student.progress[courseId].units[newUnit.id] = {
+                                completedTasks: 0,
+                                totalTasks: tasks.length
+                            };
+                            
+                            // Initialize task status for this unit
+                            if (!student.taskStatus) student.taskStatus = {};
+                            if (!student.taskStatus[courseId]) {
+                                student.taskStatus[courseId] = {};
+                            }
+                            
+                            student.taskStatus[courseId][newUnit.id] = {};
+                            tasks.forEach(task => {
+                                student.taskStatus[courseId][newUnit.id][task.id] = 'not-started';
+                            });
+                        }
+                    });
+                }
+                
+                saveData();
+                unitModal.style.display = 'none';
+                showCourseUnits(courseId);
+                renderStudents();
+                renderDashboard();
+            } catch (e) {
+                console.error('Error saving unit:', e);
+                alert('Error saving unit');
+            }
+        });
+        
+        // Student detail modal
+        document.getElementById('close-student-detail-btn').addEventListener('click', () => {
+            studentDetailModal.style.display = 'none';
+        });
+        
+        // Search and filter
+        document.getElementById('student-search').addEventListener('input', e => {
+            renderStudents(e.target.value);
+        });
+        
+        document.getElementById('course-filter').addEventListener('change', () => {
+            renderStudents(document.getElementById('student-search').value);
+        });
+        
+        document.getElementById('status-filter').addEventListener('change', () => {
+            renderStudents(document.getElementById('student-search').value);
+        });
+        
+        // Settings
+        colorThemeSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                customColorsSection.style.display = 'block';
+            } else {
+                customColorsSection.style.display = 'none';
+                appData.settings.theme = this.value;
+                applyTheme();
+            }
+        });
+        
+        document.getElementById('custom-primary').addEventListener('input', function() {
+            if (!appData.settings.colors) appData.settings.colors = {};
+            appData.settings.colors.primary = this.value;
+            applyTheme();
+        });
+        
+        document.getElementById('custom-secondary').addEventListener('input', function() {
+            if (!appData.settings.colors) appData.settings.colors = {};
+            appData.settings.colors.secondary = this.value;
+            applyTheme();
+        });
+        
+        document.getElementById('custom-accent').addEventListener('input', function() {
+            if (!appData.settings.colors) appData.settings.colors = {};
+            appData.settings.colors.accent = this.value;
+            applyTheme();
+        });
+        
+        document.getElementById('save-settings-btn').addEventListener('click', function() {
+            try {
+                appData.settings.institutionName = document.getElementById('institution-name').value;
+                appData.settings.theme = document.getElementById('color-theme').value;
+                
+                if (appData.settings.theme === 'custom') {
+                    appData.settings.colors = {
+                        primary: document.getElementById('custom-primary').value,
+                        secondary: document.getElementById('custom-secondary').value,
+                        accent: document.getElementById('custom-accent').value
+                    };
+                }
+                
+                saveData();
+                alert('Settings saved successfully!');
+            } catch (e) {
+                console.error('Error saving settings:', e);
+                alert('Error saving settings');
+            }
+        });
+        
+        // Data export/import
+        document.getElementById('export-data-btn').addEventListener('click', function() {
+            try {
+                const dataStr = JSON.stringify(appData, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                
+                const exportFileDefaultName = `vocational-progress-tracker-${new Date().toISOString().split('T')[0]}.json`;
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+            } catch (e) {
+                console.error('Error exporting data:', e);
+                alert('Error exporting data');
+            }
+        });
+        
+        document.getElementById('import-data-btn').addEventListener('click', function() {
+            document.getElementById('import-file').click();
+        });
+        
+        document.getElementById('import-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (confirm('Importing data will overwrite all current data. Are you sure you want to continue?')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        if (importedData && 
+                            typeof importedData === 'object' && 
+                            importedData.settings && 
+                            importedData.students && 
+                            importedData.courses && 
+                            importedData.activityLog) {
+                            appData = importedData;
+                            saveData();
+                            loadSettings();
+                            renderDashboard();
+                            renderStudents();
+                            renderCourses();
+                            renderRecentActivity();
+                            alert('Data imported successfully!');
+                        } else {
+                            alert('Invalid data format. Import failed.');
+                        }
+                    } catch (error) {
+                        console.error('Error importing data:', error);
+                        alert('Error importing data: ' + error.message);
+                    }
+                };
+                reader.onerror = function() {
+                    alert('Error reading file');
+                };
+                reader.readAsText(file);
+            }
+            
+            // Reset file input
+            e.target.value = '';
+        });
+        
+        // Generate report
+        document.getElementById('generate-report-btn').addEventListener('click', generateReport);
+    } catch (e) {
+        console.error('Error setting up event listeners:', e);
+    }
+}
+
         // Initialize the application
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
-                                        
